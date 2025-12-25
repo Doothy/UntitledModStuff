@@ -10,13 +10,16 @@ public class ModAttachments {
     // This is the "Key" we use to access attachments like Mana.
     // We make it "Persistent" so it saves to the player's .dat file automatically.
     @SuppressWarnings("UnstableApiUsage")
-    public static final AttachmentType<ManaAttachment> MANA = AttachmentRegistry.createPersistent(
+    public static final AttachmentType<ManaAttachment> MANA = AttachmentRegistry.create(
             Identifier.fromNamespaceAndPath(MOD_ID, "mana"),
-            ManaAttachment.CODEC // The Codec we defined in the ManaAttachment class
+            builder -> builder
+                    .persistent(ManaAttachment.CODEC)
+                    .copyOnDeath()
+                    .initializer(() -> new ManaAttachment(100, 100))
+                    .buildAndRegister(Identifier.fromNamespaceAndPath(MOD_ID, "mana"))
     );
 
     public static void initialize() {
-        // This method can be empty; calling it from your Main Initializer
         // simply forces the static field above to be registered.
     }
 }

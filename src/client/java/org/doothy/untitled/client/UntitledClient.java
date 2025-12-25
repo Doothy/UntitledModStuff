@@ -16,7 +16,6 @@ public class UntitledClient implements ClientModInitializer {
     public void onInitializeClient() {
         System.out.println("DEBUG: UntitledClient Initialized!");
 
-        // 1. Receiver logic remains the same
         ClientPlayNetworking.registerGlobalReceiver(ManaPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 if (context.client().player != null) {
@@ -26,43 +25,38 @@ public class UntitledClient implements ClientModInitializer {
             });
         });
 
-        // 2. Updated HUD Renderer for 1.21.1
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || client.options.hideGui) return;
 
             ManaAttachment mana = client.player.getAttached(ModAttachments.MANA);
+            if (mana == null) return;
 
-            int x = 20;
-            int y = 20;
+            // Position and Size
+            int x = 10;
+            int y = 10;
+            int width = 100;
+            int height = 8;
 
-            String text = (mana == null) ? "Mana: Loading..." : "Mana: " + mana.getMana() + "/" + mana.getMaxMana();
+            // Calculate fill
+            float ratio = (float) mana.getMana() / mana.getMaxMana();
+            int progress = (int) (width * ratio);
 
-            // Full opacity Cyan (0xFF for Alpha)
-            int textColor = 0xFF55FFFF;
-            int boxColor = 0x88000000;
+            // 1. Draw Background (Darker blue-black)
+            guiGraphics.fill(x, y, x + width, y + height, 0xFF121212);
 
-            int textWidth = client.font.width(text);
+            // 2. Draw Mana Bar (Vibrant Blue)
+            guiGraphics.fill(x, y, x + progress, y + height, 0xFF00AAFF);
 
-            // 1. Draw the background box
-            guiGraphics.fill(x - 5, y - 5, x + textWidth + 5, y + 15, boxColor);
+            // 3. Optional: Draw a subtle highlight on the bar
+            guiGraphics.fill(x, y, x + progress, y + 2, 0x44FFFFFF);
 
-            // 2. Use push/popMatrix to move the text "forward"
-            guiGraphics.pose().pushMatrix();
-            // Translating Z by 100 puts it clearly in front of the box
-            guiGraphics.pose().translate(0.0f, 0.0f);
+            // 4. Border (White or Light Gray)
+            guiGraphics.renderOutline(x - 1, y - 1, width + 2, height + 2, 0xFFAAAAAA);
 
-            // Using the drawString method that takes a String and a boolean for shadow
-            guiGraphics.drawString(
-                    client.font,
-                    text,
-                    x,
-                    y,
-                    textColor,
-                    true
-            );
-
-            guiGraphics.pose().popMatrix();
+            // 5. Mana Text (Centered or Inline)
+            String manaText = mana.getMana() + " / " + mana.getMaxMana();
+            guiGraphics.drawString(client.font, manaText, x + width + 5, y, 0xFFFFFFFF, true);
         });
     }
 }

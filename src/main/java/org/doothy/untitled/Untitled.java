@@ -5,11 +5,16 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.effect.ManaRegenEffect;
 import org.doothy.untitled.items.LightningStick;
+import org.doothy.untitled.items.ManaPotionItem;
 import org.doothy.untitled.items.ModItems;
 import net.minecraft.resources.Identifier;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,6 +25,12 @@ import org.doothy.untitled.network.ManaPayload;
 public class Untitled implements ModInitializer {
 
     public static final String MOD_ID = "untitled";
+
+    public static final Holder<MobEffect> MANA_REGEN = Registry.registerForHolder(
+            BuiltInRegistries.MOB_EFFECT,
+            Identifier.fromNamespaceAndPath(MOD_ID, "mana_regen"),
+            new ManaRegenEffect(MobEffectCategory.BENEFICIAL, 0x00AAFF)
+    );
 
     // 1. Data Component Registration
     public static final DataComponentType<Boolean> WAS_ON_COOLDOWN = Registry.register(
@@ -34,6 +45,7 @@ public class Untitled implements ModInitializer {
         ModItems.initialize();
         LightningStick.initialize();
         ModAttachments.initialize();
+        ManaPotionItem.initialize();
 
         // 3. Networking Registration (S2C = Server to Client)
         PayloadTypeRegistry.playS2C().register(ManaPayload.TYPE, ManaPayload.CODEC);
@@ -63,6 +75,21 @@ public class Untitled implements ModInitializer {
                         player.setAttached(ModAttachments.MANA, mana);
 
                         // Sync the new value to the client HUD immediately
+                        ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
+                    }
+                }
+            }
+        });
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (server.getTickCount() % 20 == 0) {
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    ManaAttachment mana = player.getAttached(ModAttachments.MANA);
+                    if (mana != null && mana.getMana() < mana.getMaxMana()) {
+                        // Check if player has the effect
+                        int amount = player.hasEffect(MANA_REGEN) ? 5 : 1;
+                        mana.setMana(Math.min(mana.getMaxMana(), mana.getMana() + amount));
+
+                        player.setAttached(ModAttachments.MANA, mana);
                         ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
                     }
                 }
