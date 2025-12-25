@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "untitled",
+  "version": "${version}",
+  "name": "untitled",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/untitled/textures/item/suspicious_powder.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "org.doothy.untitled.client.UntitledDataGenerator"
+    ],
+    "client": [
+      "org.doothy.untitled.client.UntitledClient"
+    ],
+    "main": [
+      "org.doothy.untitled.Untitled"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
