@@ -3,7 +3,6 @@ package org.doothy.untitled.items;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ColorParticleOption;
@@ -26,7 +25,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -44,15 +42,29 @@ import java.util.function.Function;
 
 import static org.doothy.untitled.Untitled.WAS_ON_COOLDOWN;
 
+/**
+ * LIGHTNING STICK - TECHNICAL DOCUMENTATION
+ * * CORE MECHANICS:
+ * 1. CHARGING: Right-click initiates a windup. Requires 20 Mana.
+ * 2. TARGETING: Uses raycasting to find the exact block the player is looking at.
+ * 3. SHIELDING: Passive 1.5-block radius "repel" zone while charging.
+ * 4. STRIKE: On release, summons a dramatic vertical bolt and triggers a Chain Lightning event.
+ * 5. CHAIN LIGHTNING: Jumps between 12 entities with a 15% damage decay per jump.
+ */
 public class LightningStick extends Item {
 
     public static final int MAX_WINDUP_TICKS = 72000;
     public static final int REQUIRED_WINDUP = 20;
+    public static final double TARGET_REACH = 25.0D;
 
     public LightningStick(Properties settings) {
         super(settings);
     }
 
+    /**
+     * inventoryTick handles real-time visual feedback and the defensive shield.
+     * Complex Snippet: Raycasting for the "Target Indicator".
+     */
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
         if (!(entity instanceof Player player)) return;
@@ -61,18 +73,27 @@ public class LightningStick extends Item {
         boolean wasOnCooldown = stack.getOrDefault(WAS_ON_COOLDOWN, false);
 
         if (player.isUsingItem() && player.getUseItem() == stack) {
-            HitResult hit = player.pick(25.0D, 0.0F, false);
 
-            // 1. Particle Feedback for Aiming
+            /* * COMPLEX SNIPPET: RAYCASTING
+             * player.pick project a line from the player's eyes 25 blocks forward.
+             * This finds the intersection point (HitResult) with blocks or fluids.
+             */
+            HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
+
             if (hit.getType() != HitResult.Type.MISS) {
+                // Spawn sparks at the target point so the player knows where the bolt will land.
                 level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
                         hit.getLocation().x, hit.getLocation().y + 0.1, hit.getLocation().z,
                         3, 0.2, 0.1, 0.2, 0.05);
             }
 
-            // 2. Lightning Shield Logic (Passive while charging)
+            /*
+             * DEFENSIVE SHIELD
+             * Finds all LivingEntities within a 1.5 block inflated box around the player.
+             */
             AABB shieldArea = player.getBoundingBox().inflate(1.5);
             level.getEntitiesOfClass(LivingEntity.class, shieldArea, e -> e != player && e.isAlive()).forEach(enemy -> {
+                // Calculate vector pointing away from player
                 Vec3 pushDir = enemy.position().subtract(player.position()).normalize().multiply(0.3, 0, 0.3);
                 enemy.push(pushDir.x, 0.2, pushDir.z);
                 enemy.hurt(level.damageSources().lightningBolt(), 1.0f);
@@ -90,6 +111,7 @@ public class LightningStick extends Item {
         ItemStack stack = user.getItemInHand(hand);
         if (user.getCooldowns().isOnCooldown(stack)) return InteractionResult.FAIL;
 
+        // Check Mana via Data Attachments
         ManaAttachment mana = user.getAttachedOrCreate(ModAttachments.MANA, () -> new ManaAttachment(100, 100));
         if (mana.getMana() < 20) return InteractionResult.FAIL;
 
@@ -111,17 +133,18 @@ public class LightningStick extends Item {
         }
 
         if (elapsed >= REQUIRED_WINDUP && world instanceof ServerLevel serverLevel) {
-            HitResult hit = player.pick(25.0D, 0.0F, false);
+            HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
 
             if (hit.getType() != HitResult.Type.MISS) {
                 Vec3 pos = hit.getLocation();
 
+                // Mana consumption and sync to client
                 ManaAttachment mana = player.getAttachedOrCreate(ModAttachments.MANA, () -> new ManaAttachment(100, 100));
                 mana.setMana(mana.getMana() - 20);
                 player.setAttached(ModAttachments.MANA, mana);
                 ServerPlayNetworking.send((ServerPlayer) player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
 
-                // FIXED: applyThunderClap now uses the proper distance calculation
+                // Trigger effects
                 applyThunderClap(serverLevel, player, pos);
                 spawnDramaticBolt(serverLevel, pos);
                 world.playSound(null, BlockPos.containing(pos), ModSounds.THUNDER_HIT, SoundSource.WEATHER, 10.0f, 1.0f);
@@ -135,14 +158,18 @@ public class LightningStick extends Item {
         return false;
     }
 
+    /**
+     * COMPLEX SNIPPET: EXPLOSIVE KNOCKBACK
+     * Projects entities away from the impact point based on their distance.
+     */
     private void applyThunderClap(ServerLevel level, Player source, Vec3 pos) {
         double radius = 6.0;
         AABB area = new AABB(pos.x - radius, pos.y - 2, pos.z - radius, pos.x + radius, pos.y + 4, pos.z + radius);
 
         level.getEntitiesOfClass(LivingEntity.class, area, e -> e != source && e.isAlive()).forEach(target -> {
             Vec3 dir = target.position().subtract(pos).normalize();
-            // FIXED: Using target.position().distanceTo(pos) instead of target.distanceTo(pos)
             double dist = target.position().distanceTo(pos);
+            // Linear strength decay: 1.2 at center, 0 at the edge of 6 blocks.
             double strength = 1.2 * (1.0 - (dist / radius));
 
             target.push(dir.x * strength, 0.4, dir.z * strength);
@@ -150,6 +177,10 @@ public class LightningStick extends Item {
         });
     }
 
+    /**
+     * COMPLEX SNIPPET: CHAIN LIGHTNING ALGORITHM
+     * Iteratively finds the closest target that hasn't been struck yet.
+     */
     private void performSustainedChain(ServerLevel level, Player source, Vec3 startPos) {
         Vec3 currentSource = startPos;
         List<Entity> struckEntities = new ArrayList<>();
@@ -162,6 +193,7 @@ public class LightningStick extends Item {
             Vec3 finalSource = currentSource;
             float currentDamage = baseDamage * (float) Math.pow(decayRate, i);
 
+            // Find closest living entity within range that isn't the player or already hit
             LivingEntity target = level.getEntitiesOfClass(LivingEntity.class,
                             new AABB(currentSource.x - jumpRange, currentSource.y - jumpRange, currentSource.z - jumpRange,
                                     currentSource.x + jumpRange, currentSource.y + jumpRange, currentSource.z + jumpRange),
@@ -179,6 +211,7 @@ public class LightningStick extends Item {
             target.setRemainingFireTicks(40);
             struckEntities.add(target);
 
+            // Visual link between jumps
             Vec3 targetCenter = target.position().add(0, target.getBbHeight() / 2.0, 0);
             spawnJumpParticles(level, currentSource, targetCenter);
 
@@ -188,14 +221,18 @@ public class LightningStick extends Item {
         }
     }
 
+    /**
+     * Renders a line of particles between two points.
+     */
     private void spawnJumpParticles(ServerLevel level, Vec3 start, Vec3 end) {
         Vec3 diff = end.subtract(start);
         double distance = start.distanceTo(end);
-        int points = (int) (distance * 8);
+        int points = (int) (distance * 8); // 8 particles per block for a solid line look
         java.util.Random random = new java.util.Random();
 
         for (int i = 0; i <= points; i++) {
             double pct = (double) i / points;
+            // Add slight jitter to the lightning bolt line
             double jX = (random.nextDouble() - 0.5) * 0.7;
             double jY = (random.nextDouble() - 0.5) * 0.7;
             double jZ = (random.nextDouble() - 0.5) * 0.7;
@@ -208,18 +245,24 @@ public class LightningStick extends Item {
         }
     }
 
+    /**
+     * SUMMONS VERTICAL BOLT
+     * Creates a zig-zagging vertical line of flash particles from the sky to the ground.
+     */
     private void spawnDramaticBolt(ServerLevel level, Vec3 pos) {
         double curX = pos.x;
         double curZ = pos.z;
         java.util.Random random = new java.util.Random();
         ColorParticleOption flashWhite = ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFFFFF);
 
+        // Sky-to-ground vertical effect
         for (double y = pos.y; y < pos.y + 55; y += 0.6) {
             curX += (random.nextDouble() - 0.5) * 0.6;
             curZ += (random.nextDouble() - 0.5) * 0.6;
             level.sendParticles(flashWhite, curX, y, curZ, 1, 0, 0, 0, 0);
         }
 
+        // Circular ground shockwave using Gust particles
         for (int i = 0; i < 64; i++) {
             double angle = Math.toRadians(i * 5.625);
             level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, pos.x, pos.y + 0.1, pos.z, 0, Math.cos(angle), 0, Math.sin(angle), 1.5);
@@ -228,8 +271,10 @@ public class LightningStick extends Item {
 
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity user) { return MAX_WINDUP_TICKS; }
+
     @Override
     public ItemUseAnimation getUseAnimation(ItemStack stack) { return ItemUseAnimation.BOW; }
+
     @Override
     public boolean isFoil(ItemStack stack) { return !stack.getOrDefault(WAS_ON_COOLDOWN, false); }
 
