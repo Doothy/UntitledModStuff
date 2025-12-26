@@ -21,18 +21,18 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.component.DataComponentType;
 import com.mojang.serialization.Codec;
 import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.sound.ModSounds;
 
 public class Untitled implements ModInitializer {
 
     public static final String MOD_ID = "untitled";
 
+    // 1. Data Component Registration
     public static final Holder<MobEffect> MANA_REGEN = Registry.registerForHolder(
             BuiltInRegistries.MOB_EFFECT,
             Identifier.fromNamespaceAndPath(MOD_ID, "mana_regen"),
             new ManaRegenEffect(MobEffectCategory.BENEFICIAL, 0x00AAFF)
     );
-
-    // 1. Data Component Registration
     public static final DataComponentType<Boolean> WAS_ON_COOLDOWN = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
             Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "was_on_cooldown"),
@@ -42,6 +42,7 @@ public class Untitled implements ModInitializer {
     @Override
     public void onInitialize() {
         // 2. Initialize Mod Content
+        ModSounds.initialize();
         ModItems.initialize();
         LightningStick.initialize();
         ModAttachments.initialize();

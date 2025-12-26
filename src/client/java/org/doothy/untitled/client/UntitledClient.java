@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.items.LightningSoundHelper;
 import org.doothy.untitled.network.ManaPayload;
 import org.joml.Vector3f;
 
@@ -15,6 +16,8 @@ public class UntitledClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         System.out.println("DEBUG: UntitledClient Initialized!");
+
+        LightningSoundHelper.Holder.INSTANCE = new ClientLightningSoundHelper();
 
         ClientPlayNetworking.registerGlobalReceiver(ManaPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {

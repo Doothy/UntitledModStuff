@@ -1,0 +1,16 @@
+{
+  "thunder": {
+    "category": "player",
+    "subtitle": "subtitles.untitled.thunder",
+    "sounds": [
+      "untitled:thunder"
+    ]
+  },
+  "thunder_hit": {
+    "category": "weather",
+    "subtitle": "subtitles.untitled.thunder_hit",
+    "sounds": [
+      "untitled:thunder_hit"
+    ]
+  }
+}
