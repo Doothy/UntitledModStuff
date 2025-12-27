@@ -47,7 +47,7 @@ import static org.doothy.untitled.Untitled.WAS_ON_COOLDOWN;
  * * CORE MECHANICS:
  * 1. CHARGING: Right-click initiates a windup. Requires 20 Mana.
  * 2. TARGETING: Uses raycasting to find the exact block the player is looking at.
- * 3. SHIELDING: Passive 1.5-block radius "repel" zone while charging.
+ * 3. SHIELDING: Passive 1.5-block radius "repel" zone while charging (Max 5s).
  * 4. STRIKE: On release, summons a dramatic vertical bolt and triggers a Chain Lightning event.
  * 5. CHAIN LIGHTNING: Jumps between 12 entities with a 15% damage decay per jump.
  */
@@ -55,6 +55,7 @@ public class LightningStick extends Item {
 
     public static final int MAX_WINDUP_TICKS = 72000;
     public static final int REQUIRED_WINDUP = 20;
+    public static final int SHIELD_DURATION_TICKS = 100; // 5 Seconds
     public static final double TARGET_REACH = 25.0D;
 
     public LightningStick(Properties settings) {
@@ -63,7 +64,7 @@ public class LightningStick extends Item {
 
     /**
      * inventoryTick handles real-time visual feedback and the defensive shield.
-     * Complex Snippet: Raycasting for the "Target Indicator".
+     * Includes logic to fizzle the shield after 5 seconds.
      */
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
@@ -74,9 +75,15 @@ public class LightningStick extends Item {
 
         if (player.isUsingItem() && player.getUseItem() == stack) {
 
+            // --- 1. CALCULATE DURATION ---
+            int maxUse = getUseDuration(stack, player);
+            int remaining = player.getUseItemRemainingTicks();
+            int ticksUsed = maxUse - remaining;
+
             /* * COMPLEX SNIPPET: RAYCASTING
              * player.pick project a line from the player's eyes 25 blocks forward.
              * This finds the intersection point (HitResult) with blocks or fluids.
+             * (This runs independently of the shield timer so aiming always works)
              */
             HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
 
@@ -88,17 +95,50 @@ public class LightningStick extends Item {
             }
 
             /*
-             * DEFENSIVE SHIELD
-             * Finds all LivingEntities within a 1.5 block inflated box around the player.
+             * DEFENSIVE SHIELD (TIMED)
+             * Only active for the first SHIELD_DURATION_TICKS.
              */
-            AABB shieldArea = player.getBoundingBox().inflate(1.5);
-            level.getEntitiesOfClass(LivingEntity.class, shieldArea, e -> e != player && e.isAlive()).forEach(enemy -> {
-                // Calculate vector pointing away from player
-                Vec3 pushDir = enemy.position().subtract(player.position()).normalize().multiply(0.3, 0, 0.3);
-                enemy.push(pushDir.x, 0.2, pushDir.z);
-                enemy.hurt(level.damageSources().lightningBolt(), 1.0f);
-                level.sendParticles(ParticleTypes.ELECTRIC_SPARK, enemy.getX(), enemy.getY() + 1, enemy.getZ(), 5, 0.1, 0.1, 0.1, 0.05);
-            });
+            if (ticksUsed < SHIELD_DURATION_TICKS) {
+                // A. VISUALS: Render the Repel Zone Ring
+                double radius = 2.0;
+                double particleCount = 10;
+                double increment = 2 * Math.PI / particleCount;
+                double offset = (ticksUsed * 0.1); // Spin animation
+
+                for (int i = 0; i < particleCount; i++) {
+                    double angle = (i * increment) + offset;
+                    double px = player.getX() + (Math.cos(angle) * radius);
+                    double pz = player.getZ() + (Math.sin(angle) * radius);
+
+                    // Count 0 sends particle to specific coords without velocity spread
+                    level.sendParticles(ParticleTypes.ELECTRIC_SPARK, px, player.getY(), pz, 0, 0, 0, 0, 0);
+                }
+
+                // B. MECHANICS: The Push Effect
+                AABB shieldArea = player.getBoundingBox().inflate(1.5);
+                level.getEntitiesOfClass(LivingEntity.class, shieldArea, e -> e != player && e.isAlive()).forEach(enemy -> {
+                    Vec3 pushDir = enemy.position().subtract(player.position()).normalize().multiply(0.3, 0, 0.3);
+                    enemy.push(pushDir.x, 0.2, pushDir.z);
+                    enemy.hurt(level.damageSources().lightningBolt(), 1.0f);
+                    level.sendParticles(ParticleTypes.SCULK_SOUL, enemy.getX(), enemy.getY() + 1, enemy.getZ(), 3, 0.1, 0.1, 0.1, 0.05);
+                });
+
+            } else if (ticksUsed == SHIELD_DURATION_TICKS) {
+                // --- FIZZLE EVENT (Exact Tick) ---
+                level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 1.0f, 1.0f);
+                level.playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.0f, 2.0f);
+
+                // Visual "Smoke puff" indicating shield failure
+                for (int i = 0; i < 20; i++) {
+                    double angle = Math.random() * Math.PI * 2;
+                    double r = 1.5;
+                    level.sendParticles(ParticleTypes.SMOKE,
+                            player.getX() + Math.cos(angle) * r,
+                            player.getY() + 0.5,
+                            player.getZ() + Math.sin(angle) * r,
+                            1, 0, 0, 0, 0.05);
+                }
+            }
         }
 
         if (wasOnCooldown != isOnCooldown) {
@@ -147,9 +187,16 @@ public class LightningStick extends Item {
                 // Trigger effects
                 applyThunderClap(serverLevel, player, pos);
                 spawnDramaticBolt(serverLevel, pos);
+                spawnShockwave(serverLevel, pos);
+
                 world.playSound(null, BlockPos.containing(pos), ModSounds.THUNDER_HIT, SoundSource.WEATHER, 10.0f, 1.0f);
 
                 performSustainedChain(serverLevel, player, pos);
+
+                // Player Recoil
+                Vec3 look = player.getLookAngle();
+                player.push(-look.x * 0.5, 0.1, -look.z * 0.5);
+                player.hurtMarked = true;
 
                 player.getCooldowns().addCooldown(stack, 30);
             }
@@ -206,9 +253,12 @@ public class LightningStick extends Item {
 
             if (target == null) break;
 
+            // FIX: Set fire BEFORE damage.
+            // If the damage kills the entity, it must already be on fire for loot tables to drop cooked meat.
+            target.setRemainingFireTicks(60);
             target.hurt(level.damageSources().lightningBolt(), currentDamage);
             target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 4));
-            target.setRemainingFireTicks(40);
+
             struckEntities.add(target);
 
             // Visual link between jumps
@@ -261,11 +311,18 @@ public class LightningStick extends Item {
             curZ += (random.nextDouble() - 0.5) * 0.6;
             level.sendParticles(flashWhite, curX, y, curZ, 1, 0, 0, 0, 0);
         }
+    }
 
+    /**
+     * Creates an expanding ring of particles at the target position on impact.
+     */
+    private void spawnShockwave(ServerLevel level, Vec3 pos) {
         // Circular ground shockwave using Gust particles
         for (int i = 0; i < 64; i++) {
             double angle = Math.toRadians(i * 5.625);
-            level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE, pos.x, pos.y + 0.1, pos.z, 0, Math.cos(angle), 0, Math.sin(angle), 1.5);
+            level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE,
+                    pos.x, pos.y + 0.1, pos.z,
+                    0, Math.cos(angle), 0, Math.sin(angle), 1.5);
         }
     }
 
