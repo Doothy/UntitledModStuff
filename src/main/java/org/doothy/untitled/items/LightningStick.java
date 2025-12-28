@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -38,15 +39,6 @@ import java.util.function.Function;
 
 import static org.doothy.untitled.Untitled.WAS_ON_COOLDOWN;
 
-/**
- * LIGHTNING STICK - TECHNICAL DOCUMENTATION
- * * CORE MECHANICS:
- * 1. CHARGING: Right-click initiates a windup. Requires 20 Mana.
- * 2. TARGETING: Uses raycasting to find the exact block the player is looking at.
- * 3. SHIELDING: Passive 1.5-block radius "repel" zone while charging (Max 5s).
- * 4. STRIKE: On release, summons a dramatic vertical bolt and triggers a Chain Lightning event.
- * 5. CHAIN LIGHTNING: Jumps between 12 entities with a 15% damage decay per jump.
- */
 public class LightningStick extends Item {
 
     public static final int MAX_WINDUP_TICKS = 72000;
@@ -58,10 +50,6 @@ public class LightningStick extends Item {
         super(settings);
     }
 
-    /**
-     * inventoryTick handles real-time visual feedback and the defensive shield.
-     * Includes logic to fizzle the shield after 5 seconds.
-     */
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
         if (!(entity instanceof Player player)) return;
@@ -76,26 +64,60 @@ public class LightningStick extends Item {
             int remaining = player.getUseItemRemainingTicks();
             int ticksUsed = maxUse - remaining;
 
-            /* * COMPLEX SNIPPET: RAYCASTING
-             * player.pick project a line from the player's eyes 25 blocks forward.
-             * This finds the intersection point (HitResult) with blocks or fluids.
-             * (This runs independently of the shield timer so aiming always works)
-             */
-            HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
+            // --- 2. FULL CHARGE EFFECTS (UPDATED) ---
+            if (ticksUsed >= REQUIRED_WINDUP) {
+                // MATH: Calculate "Right Hand" position relative to camera
+                Vec3 look = player.getLookAngle();
+                Vec3 up = new Vec3(0, 1, 0);
+                // Cross product gives us a "Right" vector (perpendicular to look)
+                Vec3 right = look.cross(up).normalize();
 
+                // Offset: 0.6 forward, 0.4 to the right, 0.2 down
+                Vec3 handPos = player.getEyePosition()
+                        .add(look.scale(0.6))
+                        .add(right.scale(0.4))
+                        .add(0, -0.2, 0);
+
+                // Add jitter
+                double jitter = 0.05;
+                double jX = (player.getRandom().nextDouble() - 0.5) * jitter;
+                double jY = (player.getRandom().nextDouble() - 0.5) * jitter;
+                double jZ = (player.getRandom().nextDouble() - 0.5) * jitter;
+
+                // EFFECT: Custom Colored Energy
+                if (ticksUsed % 4 == 0) {
+
+                    float r = 1.0f; // R
+                    float g = 0.9f; // G
+                    float b = 0.0f; // B
+                    float size = 1.0f;
+                    int color = ((int)(r * 255) << 16) | ((int)(g * 255) << 8) | (int)(b * 255);
+
+                    var coloredDust = new net.minecraft.core.particles.DustParticleOptions(color, size);
+
+                    level.sendParticles(coloredDust,
+                            handPos.x + jX, handPos.y + jY, handPos.z + jZ,
+                            1, 0, 0, 0, 0.01);
+
+                    // Optional: Keep the small flame for contrast
+                    level.sendParticles(ParticleTypes.SMALL_FLAME,
+                            handPos.x + jX, handPos.y + jY, handPos.z + jZ,
+                            1, 0, 0, 0, 0.005);
+                }
+            }
+
+            // --- 3. TARGETING ---
+            HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
             if (hit.getType() != HitResult.Type.MISS) {
                 ParticleHelper.spawnTargetingSparks(level, hit.getLocation());
             }
 
             /*
              * DEFENSIVE SHIELD (TIMED)
-             * Only active for the first SHIELD_DURATION_TICKS.
              */
             if (ticksUsed < SHIELD_DURATION_TICKS) {
-                // A. VISUALS: Render the Repel Zone Ring
                 ParticleHelper.spawnShieldRing(level, player, ticksUsed);
 
-                // B. MECHANICS: The Push Effect
                 AABB shieldArea = player.getBoundingBox().inflate(1.5);
                 level.getEntitiesOfClass(LivingEntity.class, shieldArea, e -> e != player && e.isAlive()).forEach(enemy -> {
                     Vec3 pushDir = enemy.position().subtract(player.position()).normalize().multiply(0.3, 0, 0.3);
@@ -105,11 +127,8 @@ public class LightningStick extends Item {
                 });
 
             } else if (ticksUsed == SHIELD_DURATION_TICKS) {
-                // --- FIZZLE EVENT (Exact Tick) ---
                 level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 1.0f, 1.0f);
                 level.playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.0f, 2.0f);
-
-                // Visual "Smoke puff" indicating shield failure
                 ParticleHelper.spawnShieldFizzle(level, player);
             }
         }
@@ -124,7 +143,6 @@ public class LightningStick extends Item {
         ItemStack stack = user.getItemInHand(hand);
         if (user.getCooldowns().isOnCooldown(stack)) return InteractionResult.FAIL;
 
-        // Check Mana via Data Attachments
         ManaAttachment mana = user.getAttachedOrCreate(ModAttachments.MANA, () -> new ManaAttachment(100, 100));
         if (mana.getMana() < 20) return InteractionResult.FAIL;
 
@@ -151,13 +169,11 @@ public class LightningStick extends Item {
             if (hit.getType() != HitResult.Type.MISS) {
                 Vec3 pos = hit.getLocation();
 
-                // Mana consumption and sync to client
                 ManaAttachment mana = player.getAttachedOrCreate(ModAttachments.MANA, () -> new ManaAttachment(100, 100));
                 mana.setMana(mana.getMana() - 20);
                 player.setAttached(ModAttachments.MANA, mana);
                 ServerPlayNetworking.send((ServerPlayer) player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
 
-                // Trigger effects
                 AbilityHelper.applyThunderClap(serverLevel, player, pos);
                 ParticleHelper.spawnDramaticBolt(serverLevel, pos);
                 ParticleHelper.spawnShockwave(serverLevel, pos);
@@ -166,7 +182,6 @@ public class LightningStick extends Item {
 
                 AbilityHelper.performSustainedChain(serverLevel, player, pos);
 
-                // Player Recoil
                 Vec3 look = player.getLookAngle();
                 player.push(-look.x * 0.5, 0.1, -look.z * 0.5);
                 player.hurtMarked = true;
