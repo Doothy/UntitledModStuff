@@ -1,6 +1,7 @@
 package org.doothy.untitled.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -9,15 +10,20 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.Untitled;
 import org.doothy.untitled.client.screen.ManaFurnaceScreen;
 import org.doothy.untitled.items.LightningSoundHelper;
+import org.doothy.untitled.items.LightningStick;
 import org.doothy.untitled.items.ManaBatteryItem;
 import org.doothy.untitled.network.ManaPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 
 public class UntitledClient implements ClientModInitializer {
 
+    private static boolean wasCharging = false;
+
+    private static int chargeTicks = 0;
     @Override
     public void onInitializeClient() {
 
@@ -55,7 +61,9 @@ public class UntitledClient implements ClientModInitializer {
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || client.options.hideGui) return;
-            if (!ClientManaCache.isValid()) return;
+            if (!ClientManaCache.isValid()) {
+                return;
+            }
 
             int mana = ClientManaCache.getMana();
             int maxMana = ClientManaCache.getCapacity();
@@ -93,6 +101,34 @@ public class UntitledClient implements ClientModInitializer {
         // ───────────────────────── RESET CACHE ─────────────────────────
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientManaCache.reset());
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientManaCache.reset());
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null) return;
+
+            Player player = client.player;
+
+            boolean charging =
+                    player.isUsingItem() &&
+                            player.getUseItem().getItem() instanceof LightningStick;
+
+            // ─── charge started ───
+            if (charging && !wasCharging) {
+                chargeTicks = 0;
+                LightningSoundHelper.Holder.INSTANCE.start();
+            }
+
+            // ─── charge ongoing ───
+            if (charging) {
+                chargeTicks++;
+            }
+
+            // ─── charge cancelled before completion ───
+            if (!charging && wasCharging) {
+                LightningSoundHelper.Holder.INSTANCE.stop();
+                chargeTicks = 0;
+            }
+
+            wasCharging = charging;
+        });
     }
 }

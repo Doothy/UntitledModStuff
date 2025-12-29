@@ -51,17 +51,23 @@ public class LightningStick extends Item {
         super(settings);
     }
 
-    // ───────────────────────── INVENTORY TICK (VISUALS ONLY) ─────────────────────────
+    // ───────────────────────── INVENTORY TICK ─────────────────────────
 
     @Override
-    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
+    public void inventoryTick(
+            ItemStack stack,
+            ServerLevel level,
+            Entity entity,
+            EquipmentSlot slot
+    ) {
         if (!(entity instanceof Player player)) return;
-
         boolean isOnCooldown = player.getCooldowns().isOnCooldown(stack);
         boolean wasOnCooldown = stack.getOrDefault(WAS_ON_COOLDOWN, false);
 
         if (player.isUsingItem() && player.getUseItem() == stack) {
-            int ticksUsed = getUseDuration(stack, player) - player.getUseItemRemainingTicks();
+            int ticksUsed =
+                    getUseDuration(stack, player) -
+                            player.getUseItemRemainingTicks();
 
             if (ticksUsed >= REQUIRED_WINDUP && ticksUsed % 4 == 0) {
                 Vec3 look = player.getLookAngle();
@@ -73,13 +79,17 @@ public class LightningStick extends Item {
                         .add(0, -0.2, 0);
 
                 double jitter = 0.05;
-                double jX = (player.getRandom().nextDouble() - 0.5) * jitter;
-                double jY = (player.getRandom().nextDouble() - 0.5) * jitter;
-                double jZ = (player.getRandom().nextDouble() - 0.5) * jitter;
-
-                var dust = new net.minecraft.core.particles.DustParticleOptions(0xFFF000, 1.0f);
-                level.sendParticles(dust, handPos.x + jX, handPos.y + jY, handPos.z + jZ, 1, 0, 0, 0, 0.01);
-                level.sendParticles(ParticleTypes.SMALL_FLAME, handPos.x + jX, handPos.y + jY, handPos.z + jZ, 1, 0, 0, 0, 0.005);
+                level.sendParticles(
+                        ParticleTypes.SMALL_FLAME,
+                        handPos.x,
+                        handPos.y,
+                        handPos.z,
+                        1,
+                        jitter,
+                        jitter,
+                        jitter,
+                        0.01
+                );
             }
 
             HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
@@ -91,18 +101,38 @@ public class LightningStick extends Item {
                 ParticleHelper.spawnShieldRing(level, player, ticksUsed);
 
                 AABB area = player.getBoundingBox().inflate(1.5);
-                level.getEntitiesOfClass(LivingEntity.class, area, e -> e != player && e.isAlive())
-                        .forEach(enemy -> {
-                            Vec3 push = enemy.position().subtract(player.position()).normalize().multiply(0.3, 0, 0.3);
-                            enemy.push(push.x, 0.2, push.z);
-                            if (ticksUsed % 10 == 0) {
-                                enemy.hurt(level.damageSources().lightningBolt(), 1.0f);
-                            }
-                            ParticleHelper.spawnShieldHit(level, enemy);
-                        });
+                level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        area,
+                        e -> e != player && e.isAlive()
+                ).forEach(enemy -> {
+                    Vec3 push = enemy.position()
+                            .subtract(player.position())
+                            .normalize()
+                            .multiply(0.3, 0, 0.3);
+                    enemy.push(push.x, 0.2, push.z);
+                    if (ticksUsed % 10 == 0) {
+                        enemy.hurt(level.damageSources().lightningBolt(), 1.0f);
+                    }
+                    ParticleHelper.spawnShieldHit(level, enemy);
+                });
             } else if (ticksUsed == SHIELD_DURATION_TICKS) {
-                level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 1f, 1f);
-                level.playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1f, 2f);
+                level.playSound(
+                        null,
+                        player.blockPosition(),
+                        SoundEvents.FIRE_EXTINGUISH,
+                        SoundSource.PLAYERS,
+                        1f,
+                        1f
+                );
+                level.playSound(
+                        null,
+                        player.blockPosition(),
+                        SoundEvents.BEACON_DEACTIVATE,
+                        SoundSource.PLAYERS,
+                        1f,
+                        2f
+                );
                 ParticleHelper.spawnShieldFizzle(level, player);
             }
         }
@@ -115,19 +145,17 @@ public class LightningStick extends Item {
     // ───────────────────────── USE START ─────────────────────────
 
     @Override
-    public @NotNull InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+    public @NotNull InteractionResult use(
+            @NotNull Level level,
+            @NotNull Player player,
+            @NotNull InteractionHand hand
+    ) {
         ItemStack stack = player.getItemInHand(hand);
         if (player.getCooldowns().isOnCooldown(stack)) return InteractionResult.FAIL;
 
-        ManaStorage mana = player.getAttached(ModAttachments.MANA);
-        if (mana == null) return InteractionResult.FAIL;
-
+        ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
         if (mana.extractMana(MANA_COST, ManaTransaction.SIMULATE) < MANA_COST) {
             return InteractionResult.FAIL;
-        }
-
-        if (level.isClientSide()) {
-            LightningSoundHelper.Holder.INSTANCE.start();
         }
 
         player.startUsingItem(hand);
@@ -137,16 +165,15 @@ public class LightningStick extends Item {
     // ───────────────────────── RELEASE ─────────────────────────
 
     @Override
-    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remainingUseTicks) {
+    public boolean releaseUsing(
+            ItemStack stack,
+            Level level,
+            LivingEntity entity,
+            int remainingUseTicks
+    ) {
         if (!(entity instanceof ServerPlayer player)) return false;
 
         int elapsed = getUseDuration(stack, entity) - remainingUseTicks;
-
-        if (level.isClientSide()) {
-            LightningSoundHelper.Holder.INSTANCE.stop();
-            return false;
-        }
-
         if (elapsed < REQUIRED_WINDUP || !(level instanceof ServerLevel serverLevel)) {
             return false;
         }
@@ -154,9 +181,7 @@ public class LightningStick extends Item {
         HitResult hit = player.pick(TARGET_REACH, 0.0F, false);
         if (hit.getType() == HitResult.Type.MISS) return false;
 
-        ManaStorage mana = player.getAttached(ModAttachments.MANA);
-        if (mana == null) return false;
-
+        ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
         if (mana.extractMana(MANA_COST, ManaTransaction.EXECUTE) < MANA_COST) {
             return false;
         }
@@ -169,7 +194,15 @@ public class LightningStick extends Item {
         ParticleHelper.spawnDramaticBolt(serverLevel, pos);
         ParticleHelper.spawnShockwave(serverLevel, pos);
 
-        level.playSound(null, BlockPos.containing(pos), ModSounds.THUNDER_HIT, SoundSource.WEATHER, 10.0f, 1.0f);
+        serverLevel.playSound(
+                null,
+                BlockPos.containing(pos),
+                ModSounds.THUNDER_HIT,
+                SoundSource.WEATHER,
+                10.0f,
+                1.0f
+        );
+
         AbilityHelper.performSustainedChain(serverLevel, player, pos);
 
         Vec3 look = player.getLookAngle();
@@ -180,13 +213,30 @@ public class LightningStick extends Item {
         return true;
     }
 
-    @Override public int getUseDuration(ItemStack stack, LivingEntity user) { return MAX_WINDUP_TICKS; }
-    @Override public ItemUseAnimation getUseAnimation(ItemStack stack) { return ItemUseAnimation.BOW; }
-    @Override public boolean isFoil(ItemStack stack) { return !stack.getOrDefault(WAS_ON_COOLDOWN, false); }
+    // ───────────────────────── ITEM BEHAVIOR ─────────────────────────
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity user) {
+        return MAX_WINDUP_TICKS;
+    }
+
+    @Override
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.BOW;
+    }
+
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return !stack.getOrDefault(WAS_ON_COOLDOWN, false);
+    }
 
     // ───────────────────────── REGISTRATION ─────────────────────────
 
-    public static Item register(String name, Function<Item.Properties, Item> factory, Item.Properties settings) {
+    public static Item register(
+            String name,
+            Function<Item.Properties, Item> factory,
+            Item.Properties settings
+    ) {
         ResourceKey<Item> key = ResourceKey.create(
                 Registries.ITEM,
                 Identifier.fromNamespaceAndPath(Untitled.MOD_ID, name)
@@ -201,9 +251,12 @@ public class LightningStick extends Item {
             new Item.Properties().component(
                     DataComponents.LORE,
                     new ItemLore(List.of(
-                            Component.literal("Sustained Cataclysm").withStyle(net.minecraft.ChatFormatting.GOLD),
-                            Component.literal("Shields user & chains targets").withStyle(net.minecraft.ChatFormatting.YELLOW),
-                            Component.literal("Cost: 20 Mana").withStyle(net.minecraft.ChatFormatting.AQUA)
+                            Component.literal("Sustained Cataclysm")
+                                    .withStyle(net.minecraft.ChatFormatting.GOLD),
+                            Component.literal("Shields user & chains targets")
+                                    .withStyle(net.minecraft.ChatFormatting.YELLOW),
+                            Component.literal("Cost: 20 Mana")
+                                    .withStyle(net.minecraft.ChatFormatting.AQUA)
                     ))
             )
     );

@@ -19,7 +19,8 @@ public final class ManaSyncHandler {
      * @param player The player to sync.
      */
     public static void sync(ServerPlayer player) {
-        ManaStorage mana = player.getAttached(ModAttachments.MANA);
+        ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
+
         if (mana == null) return;
 
         ServerPlayNetworking.send(

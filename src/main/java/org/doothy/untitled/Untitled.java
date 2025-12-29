@@ -1,6 +1,7 @@
 package org.doothy.untitled;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -26,12 +27,10 @@ import org.doothy.untitled.items.LightningStick;
 import org.doothy.untitled.items.ManaPotionItem;
 import org.doothy.untitled.items.ModItems;
 import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.network.ManaSyncHandler;
 import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
-/**
- * The main entry point for the Untitled Mod.
- */
 public class Untitled implements ModInitializer {
 
     public static final String MOD_ID = "untitled";
@@ -81,35 +80,30 @@ public class Untitled implements ModInitializer {
         // Networking
         PayloadTypeRegistry.playS2C().register(ManaPayload.TYPE, ManaPayload.CODEC);
 
-        // ───────────────────────── SYNC ON JOIN ─────────────────────────
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (server.getTickCount() % 20 != 0) return;
+        // ───────────────────────── SYNC (SAFE TIMING) ─────────────────────────
 
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-
-                ManaAttachment mana = player.getAttached(ModAttachments.MANA);
-                if (mana == null || mana.isFull()) continue;
-
-                long amount = player.hasEffect(MANA_REGEN) ? 5 : 1;
-                mana.insertMana(amount, ManaTransaction.EXECUTE);
-
-                ServerPlayNetworking.send(
-                        player,
-                        new ManaPayload(
-                                (int) mana.getMana(),
-                                (int) mana.getMaxMana()
-                        )
-                );
-            }
+        // Delay sync by 1 server task so attachments exist
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            server.execute(() -> {
+                ServerPlayer player = handler.player;
+                ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
+                ManaSyncHandler.sync(player);
+            });
         });
 
-        // ───────────────────────── MANA REGEN SYSTEM ─────────────────────────
+        // Sync on respawn / dimension copy
+        ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
+            ManaSyncHandler.sync(newPlayer);
+        });
+
+        // ───────────────────────── MANA REGEN + SYNC ─────────────────────────
+
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getTickCount() % 20 != 0) return;
 
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 
-                ManaStorage mana = player.getAttached(ModAttachments.MANA);
+                ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
                 if (mana == null || mana.isFull()) continue;
 
                 long amount = player.hasEffect(MANA_REGEN) ? 5 : 1;

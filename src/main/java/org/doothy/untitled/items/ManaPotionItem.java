@@ -45,7 +45,7 @@ public class ManaPotionItem extends Item {
     ) {
         if (!level.isClientSide() && user instanceof ServerPlayer player) {
 
-            ManaStorage mana = player.getAttached(ModAttachments.MANA);
+            ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
             if (mana == null) return stack;
 
             level.playSound(

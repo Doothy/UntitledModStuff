@@ -63,7 +63,7 @@ public class ManaBatteryItem extends Item {
             return;
         }
 
-        ManaStorage mana = player.getAttached(ModAttachments.MANA);
+        ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
         if (mana == null) {
             player.stopUsingItem();
             return;

@@ -13,6 +13,12 @@ import java.util.Optional;
  */
 public final class ManaAttachment implements ManaStorage {
 
+    /**
+     * Default capacity for NEW players (no saved data).
+     * This does NOT affect existing saves.
+     */
+    public static final long DEFAULT_CAPACITY = 100;
+
     public static final Codec<ManaAttachment> CODEC =
             RecordCodecBuilder.create(instance -> instance.group(
                     Codec.LONG.fieldOf("mana")
@@ -27,7 +33,10 @@ public final class ManaAttachment implements ManaStorage {
                     Codec.LONG.optionalFieldOf("max_mana")
                             .forGetter(att -> Optional.of(att.getMaxMana()))
             ).apply(instance, (mana, capacityOpt, legacyOpt) -> {
-                long capacity = capacityOpt.orElseGet(() -> legacyOpt.orElse(0L));
+
+                long capacity = capacityOpt
+                        .orElseGet(() -> legacyOpt.orElse(DEFAULT_CAPACITY));
+
                 return new ManaAttachment(mana, capacity);
             }));
 
@@ -36,10 +45,11 @@ public final class ManaAttachment implements ManaStorage {
 
     /**
      * Full constructor used by the Codec.
+     * Ensures capacity is never zero.
      */
     public ManaAttachment(long mana, long capacity) {
-        this.mana = Math.min(mana, capacity);
-        this.capacity = capacity;
+        this.capacity = capacity > 0 ? capacity : DEFAULT_CAPACITY;
+        this.mana = Math.min(Math.max(0, mana), this.capacity);
     }
 
     /**
@@ -63,6 +73,8 @@ public final class ManaAttachment implements ManaStorage {
 
     @Override
     public long insertMana(long amount, ManaTransaction tx) {
+        if (amount <= 0) return 0;
+
         long accepted = Math.min(amount, capacity - mana);
         if (tx == ManaTransaction.EXECUTE && accepted > 0) {
             mana += accepted;
@@ -72,6 +84,8 @@ public final class ManaAttachment implements ManaStorage {
 
     @Override
     public long extractMana(long amount, ManaTransaction tx) {
+        if (amount <= 0) return 0;
+
         long extracted = Math.min(amount, mana);
         if (tx == ManaTransaction.EXECUTE && extracted > 0) {
             mana -= extracted;
