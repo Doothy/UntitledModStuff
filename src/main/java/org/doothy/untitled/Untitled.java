@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -37,6 +38,14 @@ public class Untitled implements ModInitializer {
             BuiltInRegistries.DATA_COMPONENT_TYPE,
             Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "was_on_cooldown"),
             DataComponentType.<Boolean>builder().persistent(Codec.BOOL).build()
+    );
+    public static final DataComponentType<Integer> STORED_MANA = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(MOD_ID, "stored_mana"),
+            DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT) // Saves to disk
+                    .networkSynchronized(ByteBufCodecs.VAR_INT) // Syncs to Client for Tooltips
+                    .build()
     );
 
     @Override

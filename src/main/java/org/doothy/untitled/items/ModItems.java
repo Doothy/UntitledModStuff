@@ -33,6 +33,16 @@ public class ModItems {
 
     public static final Item SUSPICIOUS_SUBSTANCE = register("suspicious_substance", Item::new, new Item.Properties());
 
+    // BATTERIES
+    // Tier 1: Stores 500 Mana, Drains 1 per tick
+    public static final Item WEAK_MANA_BATTERY = register("weak_mana_battery",
+            p -> new ManaBatteryItem(p, 500, 1),
+            new Item.Properties());
+
+    // Tier 2: Stores 5000 Mana, Drains 5 per tick
+    public static final Item DENSE_MANA_BATTERY = register("dense_mana_battery",
+            p -> new ManaBatteryItem(p, 5000, 5),
+            new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE));
 
     public static void initialize(){
         // Get the event for modifying entries in the (for example) ingredients group
@@ -42,6 +52,11 @@ public class ModItems {
 
         // Add the suspicious substance to the composting registry with a 30% chance of increasing the composter's level.
         CompostingChanceRegistry.INSTANCE.add(ModItems.SUSPICIOUS_SUBSTANCE, 0.3f);
+
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register((itemGroup) -> {
+            itemGroup.accept(WEAK_MANA_BATTERY);
+            itemGroup.accept(DENSE_MANA_BATTERY);
+        });
 
         // Add an item to Fuels Registry, a second has 20 ticks, so we declare time in
         // amount of seconds * 20 ticks

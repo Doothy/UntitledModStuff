@@ -1,13 +1,17 @@
 package org.doothy.untitled.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import org.doothy.untitled.Untitled;
 import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
 import org.doothy.untitled.items.LightningSoundHelper;
+import org.doothy.untitled.items.ManaBatteryItem;
 import org.doothy.untitled.network.ManaPayload;
 import org.joml.Vector3f;
 
@@ -26,6 +30,20 @@ public class UntitledClient implements ClientModInitializer {
                             new ManaAttachment(payload.current(), payload.max()));
                 }
             });
+        });
+
+        ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
+            // Check if the item is one of our batteries
+            if (stack.getItem() instanceof ManaBatteryItem battery) {
+                // Read the synced data
+                int stored = stack.getOrDefault(Untitled.STORED_MANA, 0);
+                int max = battery.getMaxCapacity(); // You'll need a getter for maxCapacity in ManaBatteryItem
+
+                lines.add(Component.literal("Stored Mana: ")
+                        .withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal(stored + " / " + max)
+                                .withStyle(ChatFormatting.AQUA)));
+            }
         });
 
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
