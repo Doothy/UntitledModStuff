@@ -1,35 +1,39 @@
 package org.doothy.untitled.client;
 
 /**
- * A simple cache for storing the player's mana on the client side.
- * Used for rendering the HUD.
+ * Client-side cache for the player's mana.
+ * Server is authoritative; this is render-only state.
  */
 public final class ClientManaCache {
 
-    private ClientManaCache() {} // No instantiation
+    private static int mana = 0;
+    private static int capacity = 0;
 
-    /** Current mana amount. */
-    public static int mana = 0;
-    /** Maximum mana amount. */
-    public static int maxMana = 0;
+    private ClientManaCache() {}
 
-    /**
-     * Updates the cache with new values.
-     *
-     * @param mana    The current mana.
-     * @param maxMana The maximum mana.
-     */
-    public static void set(int mana, int maxMana) {
+    public static void set(int mana, int capacity) {
         ClientManaCache.mana = mana;
-        ClientManaCache.maxMana = maxMana;
+        ClientManaCache.capacity = capacity;
     }
 
-    /**
-     * Checks if the cache contains valid data (maxMana > 0).
-     *
-     * @return True if valid, false otherwise.
-     */
+    public static int getMana() {
+        return mana;
+    }
+
+    public static int getCapacity() {
+        return capacity;
+    }
+
     public static boolean isValid() {
-        return maxMana > 0;
+        return capacity > 0;
+    }
+
+    public static float getFillRatio() {
+        return capacity <= 0 ? 0f : (float) mana / capacity;
+    }
+
+    public static void reset() {
+        mana = 0;
+        capacity = 0;
     }
 }

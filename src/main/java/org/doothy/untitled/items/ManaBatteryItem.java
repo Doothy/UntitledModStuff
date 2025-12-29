@@ -1,6 +1,5 @@
 package org.doothy.untitled.items;
 
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,97 +12,106 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.level.Level;
 import org.doothy.untitled.Untitled;
-import org.doothy.untitled.attachment.ManaAttachment;
+import org.doothy.untitled.api.mana.ManaStorage;
+import org.doothy.untitled.api.mana.ManaTransaction;
 import org.doothy.untitled.attachment.ModAttachments;
-import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.network.ManaSyncHandler;
 
-/**
- * An item that stores mana.
- * Can be charged by the player holding right-click.
- */
 public class ManaBatteryItem extends Item {
 
     private final int maxCapacity;
     private final int transferRate; // Mana per tick
 
     public ManaBatteryItem(Properties properties, int maxCapacity, int transferRate) {
-        super(properties.stacksTo(1)); // Batteries shouldn't stack
+        super(properties.stacksTo(1));
         this.maxCapacity = maxCapacity;
         this.transferRate = transferRate;
-
     }
 
+    // ───────────────────────── USE START ─────────────────────────
+
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand usedHand) {
-        ItemStack stack = player.getItemInHand(usedHand);
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-        int currentStored = stack.getOrDefault(Untitled.STORED_MANA, 0);
-
-        if (currentStored >= getMaxCapacity()) {
+        int stored = stack.getOrDefault(Untitled.STORED_MANA, 0);
+        if (stored >= maxCapacity) {
             return InteractionResult.PASS;
         }
 
-        player.startUsingItem(usedHand);
+        player.startUsingItem(hand);
         return InteractionResult.CONSUME;
     }
 
-    /**
-     * Handles the charging logic while the item is being used.
-     * Transfers mana from the player to the battery.
-     */
+    // ───────────────────────── CHARGING ─────────────────────────
+
     @Override
-    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer player)) return;
+    public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
+        if (level.isClientSide() || !(entity instanceof ServerPlayer player)) return;
 
-        // 1. Get Item Storage State
-        int currentStored = stack.getOrDefault(Untitled.STORED_MANA, 0);
-        if (currentStored >= maxCapacity) {
+        int stored = stack.getOrDefault(Untitled.STORED_MANA, 0);
+        if (stored >= maxCapacity) {
             player.stopUsingItem();
-            level.playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 1.0f, 2.0f);
+            level.playSound(
+                    null,
+                    player.blockPosition(),
+                    SoundEvents.NOTE_BLOCK_CHIME.value(),
+                    SoundSource.PLAYERS,
+                    1.0f,
+                    2.0f
+            );
             return;
         }
 
-        // 2. Get Player Mana State
-        ManaAttachment mana = player.getAttached(ModAttachments.MANA);
-        if (mana == null || mana.getMana() <= 0) {
-            player.stopUsingItem(); // Stop if player is empty
+        ManaStorage mana = player.getAttached(ModAttachments.MANA);
+        if (mana == null) {
+            player.stopUsingItem();
             return;
         }
 
-        // 3. Calculate Transfer
-        // We can transfer the Rate, but not more than the player has, and not more than fits in the battery
-        int spaceInBattery = maxCapacity - currentStored;
-        int amountToTransfer = Math.min(transferRate, Math.min(mana.getMana(), spaceInBattery));
+        int spaceInBattery = maxCapacity - stored;
+        int maxTransfer = Math.min(transferRate, spaceInBattery);
 
-        if (amountToTransfer > 0) {
-            // Update Player
-            mana.setMana(mana.getMana() - amountToTransfer);
+        // Simulate extraction first
+        long available = mana.extractMana(maxTransfer, ManaTransaction.SIMULATE);
+        if (available <= 0) {
+            player.stopUsingItem();
+            return;
+        }
 
-            // SYNC PLAYER MANA TO CLIENT (Important!)
-            ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
+        // Execute transfer
+        mana.extractMana(available, ManaTransaction.EXECUTE);
+        stack.set(Untitled.STORED_MANA, stored + (int) available);
 
-            // Update Item
-            stack.set(Untitled.STORED_MANA, currentStored + amountToTransfer);
+        ManaSyncHandler.sync(player);
 
-            // Optional: Play a quiet pitch-rising sound based on fill level
-            if (remainingUseDuration % 5 == 0) {
-                float pitch = 0.5f + ((float) currentStored / maxCapacity);
-                level.playSound(null, player.blockPosition(), SoundEvents.SCULK_CLICKING, SoundSource.PLAYERS, 0.4f, pitch);
-            }
+        // Feedback sound
+        if (remainingUseDuration % 5 == 0) {
+            float pitch = 0.5f + ((float) stored / maxCapacity);
+            level.playSound(
+                    null,
+                    player.blockPosition(),
+                    SoundEvents.SCULK_CLICKING,
+                    SoundSource.PLAYERS,
+                    0.4f,
+                    pitch
+            );
         }
     }
 
+    // ───────────────────────── ITEM BEHAVIOR ─────────────────────────
+
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
-        return 72000; // Allow holding for a long time
+        return 72000;
     }
 
     @Override
     public ItemUseAnimation getUseAnimation(ItemStack stack) {
-        return ItemUseAnimation.BOW; // Looks like they are charging something
+        return ItemUseAnimation.BOW;
     }
 
-    // --- VISUALS ---
+    // ───────────────────────── VISUALS ─────────────────────────
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
@@ -113,20 +121,15 @@ public class ManaBatteryItem extends Item {
     @Override
     public int getBarWidth(ItemStack stack) {
         int stored = stack.getOrDefault(Untitled.STORED_MANA, 0);
-        // Return value between 0 and 13 (pixel width of item)
         return Math.round(13.0f * stored / maxCapacity);
     }
 
     @Override
     public int getBarColor(ItemStack stack) {
-        return 0x00FFFF; // Cyan color for Mana
+        return 0x00FFFF;
     }
 
-    /**
-     * Gets the maximum mana capacity of this battery.
-     * @return The maximum capacity.
-     */
     public int getMaxCapacity() {
-        return this.maxCapacity;
+        return maxCapacity;
     }
 }
