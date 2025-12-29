@@ -1,7 +1,6 @@
 package org.doothy.untitled.items;
 
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -12,23 +11,22 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import org.doothy.untitled.Untitled;
-import org.doothy.untitled.attachment.ManaAttachment;
+import org.doothy.untitled.api.mana.ManaStorage;
+import org.doothy.untitled.api.mana.ManaTransaction;
 import org.doothy.untitled.attachment.ModAttachments;
-import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.network.ManaSyncHandler;
 import org.jspecify.annotations.NonNull;
 
 import java.util.function.BiFunction;
 
 /**
- * A potion item that restores mana or grants mana regeneration.
+ * A potion that restores Mana or applies a Mana Regen effect.
  */
 public class ManaPotionItem extends Item {
+
     private final boolean isRegen;
 
     public ManaPotionItem(Properties properties, boolean isRegen) {
@@ -43,40 +41,49 @@ public class ManaPotionItem extends Item {
     }
 
     @Override
-    public @NonNull ItemStack finishUsingItem(@NonNull ItemStack stack, @NonNull Level level, @NonNull LivingEntity user) {
+    public @NonNull ItemStack finishUsingItem(
+            @NonNull ItemStack stack,
+            @NonNull Level level,
+            @NonNull LivingEntity user
+    ) {
         if (!level.isClientSide() && user instanceof ServerPlayer player) {
-            ManaAttachment mana = player.getAttached(ModAttachments.MANA);
 
-            // Play the sound
-            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+            ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
+            if (mana == null) return stack;
+
+            level.playSound(
+                    null,
+                    player.getX(), player.getY(), player.getZ(),
                     net.minecraft.sounds.SoundEvents.GENERIC_DRINK,
-                    net.minecraft.sounds.SoundSource.PLAYERS, 1.0f, 1.0f);
+                    net.minecraft.sounds.SoundSource.PLAYERS,
+                    1.0f,
+                    1.0f
+            );
 
-            if (mana != null) {
-                // Logic for instant vs regen
-                if (!isRegen) {
-                    mana.setMana(Math.min(mana.getMaxMana(), mana.getMana() + 50));
-                } else {
-                    player.addEffect(new net.minecraft.world.effect.MobEffectInstance(Untitled.MANA_REGEN, 600, 0));
-                }
+            if (!isRegen) {
+                mana.insertMana(50, ManaTransaction.EXECUTE);
+            } else {
+                player.addEffect(
+                        new net.minecraft.world.effect.MobEffectInstance(
+                                Untitled.MANA_REGEN,
+                                600,
+                                0
+                        )
+                );
+            }
 
-                // Sync
-                player.setAttached(ModAttachments.MANA, mana);
-                ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
+            // Sync once, centrally
+            ManaSyncHandler.sync(player);
 
-                // Handle the Stack and the Empty Bottle
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
+            // Handle bottle
+            if (!player.getAbilities().instabuild) {
+                stack.shrink(1);
 
-                    ItemStack emptyBottle = new ItemStack(net.minecraft.world.item.Items.GLASS_BOTTLE);
-                    if (stack.isEmpty()) {
-                        return emptyBottle; // Stack is gone, just return the bottle
-                    } else {
-                        // Stack still has potions, put the bottle in the inventory
-                        if (!player.getInventory().add(emptyBottle)) {
-                            player.drop(emptyBottle, false); // Inventory full? Drop it on the ground
-                        }
-                    }
+                ItemStack emptyBottle = new ItemStack(Items.GLASS_BOTTLE);
+                if (stack.isEmpty()) {
+                    return emptyBottle;
+                } else if (!player.getInventory().add(emptyBottle)) {
+                    player.drop(emptyBottle, false);
                 }
             }
         }
@@ -93,38 +100,33 @@ public class ManaPotionItem extends Item {
         return 32;
     }
 
-    /**
-     * Registers a mana potion item.
-     *
-     * @param name        The registry name.
-     * @param itemFactory A function to create the item instance.
-     * @param settings    The item properties.
-     * @param isRegen     Whether the potion grants regeneration.
-     * @return The registered item.
-     */
-    public static Item register(String name, BiFunction<Properties, Boolean, Item> itemFactory, Item.Properties settings, boolean isRegen) {
-        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM,
-                Identifier.fromNamespaceAndPath(Untitled.MOD_ID, name));
+    // ───────────────────────── REGISTRATION ─────────────────────────
 
-        // Pass both settings AND the isRegen boolean to the factory
-        Item item = itemFactory.apply(settings.setId(itemKey), isRegen);
+    public static Item register(
+            String name,
+            BiFunction<Properties, Boolean, Item> factory,
+            Properties settings,
+            boolean isRegen
+    ) {
+        ResourceKey<Item> key = ResourceKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(Untitled.MOD_ID, name)
+        );
 
-        return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+        Item item = factory.apply(settings.setId(key), isRegen);
+        return Registry.register(BuiltInRegistries.ITEM, key, item);
     }
 
-    /** Instant Mana Potion: Restores 50 Mana instantly. */
-    public static final Item INSTANT_MANA_POTION = register("instant_mana_potion",
-            ManaPotionItem::new, new Item.Properties().stacksTo(16), false);
+    public static final Item INSTANT_MANA_POTION =
+            register("instant_mana_potion", ManaPotionItem::new,
+                    new Item.Properties().stacksTo(16), false);
 
-    /** Regen Mana Potion: Grants Mana Regeneration effect. */
-    public static final Item REGEN_MANA_POTION = register("regen_mana_potion",
-            ManaPotionItem::new, new Item.Properties().stacksTo(16), true);
+    public static final Item REGEN_MANA_POTION =
+            register("regen_mana_potion", ManaPotionItem::new,
+                    new Item.Properties().stacksTo(16), true);
 
-    /**
-     * Initializes the potion items and adds them to the creative tab.
-     */
     public static void initialize() {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS)
-                .register((itemGroup) -> itemGroup.accept(ManaPotionItem.INSTANT_MANA_POTION));
+                .register(entries -> entries.accept(INSTANT_MANA_POTION));
     }
 }

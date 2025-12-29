@@ -7,27 +7,28 @@ import net.minecraft.resources.Identifier;
 import static org.doothy.untitled.Untitled.MOD_ID;
 
 /**
- * Registry class for all custom data attachments in the mod.
+ * Registry class for all custom attachments in the mod.
  */
-public class ModAttachments {
+public final class ModAttachments {
+
     /**
-     * The Mana attachment type.
-     * Persistent (saves to disk), copies on death, and initializes with 100/100 mana.
+     * The Mana attachment.
+     * Stores mana on entities (like players).
      */
     @SuppressWarnings("UnstableApiUsage")
-    public static final AttachmentType<ManaAttachment> MANA = AttachmentRegistry.create(
-            Identifier.fromNamespaceAndPath(MOD_ID, "mana"),
-            builder -> builder
-                    .persistent(ManaAttachment.CODEC)
-                    .copyOnDeath()
-                    .initializer(() -> new ManaAttachment(100, 100))
-                    .buildAndRegister(Identifier.fromNamespaceAndPath(MOD_ID, "mana"))
-    );
+    public static final AttachmentType<ManaAttachment> MANA =
+            AttachmentRegistry.create(
+                    Identifier.fromNamespaceAndPath(MOD_ID, "mana"),
+                    builder -> builder
+                            .persistent(ManaAttachment.CODEC)
+                            .copyOnDeath()
+                            .initializer(() -> new ManaAttachment(100))
+            );
 
     /**
      * Initializes the attachments.
      */
-    public static void initialize() {
-        // simply forces the static field above to be registered.
-    }
+    public static void initialize() {}
+
+    private ModAttachments() {}
 }

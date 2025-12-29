@@ -9,26 +9,34 @@ import org.doothy.untitled.Untitled;
 import org.jspecify.annotations.NonNull;
 
 /**
- * A network payload for syncing mana data from server to client.
+ * Server → Client payload for syncing mana state.
+ * <p>
+ * This payload is PURE DATA.
+ * It does not reference attachments, storage implementations, or gameplay logic.
  *
- * @param current The current mana amount.
- * @param max     The maximum mana amount.
+ * @param mana     Current mana amount
+ * @param capacity Maximum mana capacity
  */
-public record ManaPayload(int current, int max) implements CustomPacketPayload {
+public record ManaPayload(int mana, int capacity) implements CustomPacketPayload {
 
-    /** The payload type identifier. */
+    /** Packet identifier */
     public static final Type<ManaPayload> TYPE =
-            new Type<>(Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "mana_sync"));
+            new Type<>(Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "mana"));
 
     /**
-     * The codec for serializing and deserializing the payload.
-     * Uses modern 1.21.11 StreamCodec implementation.
+     * Stream codec (MC 1.21.11+).
+     * <p>
+     * Uses VAR_INT because:
+     * - HUD-scale values
+     * - Compact over the wire
+     * - Internal storage may still use long
      */
-    public static final StreamCodec<RegistryFriendlyByteBuf, ManaPayload> CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, ManaPayload::current,
-            ByteBufCodecs.VAR_INT, ManaPayload::max,
-            ManaPayload::new
-    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, ManaPayload> CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.VAR_INT, ManaPayload::mana,
+                    ByteBufCodecs.VAR_INT, ManaPayload::capacity,
+                    ManaPayload::new
+            );
 
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {

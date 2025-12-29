@@ -33,9 +33,7 @@ public class ManaFurnaceMenu extends AbstractContainerMenu {
                 playerInv.player.level().getBlockEntity(pos) instanceof Container container
                         ? container
                         : new SimpleContainer(3),
-                playerInv.player.level().getBlockEntity(pos) instanceof ManaFurnaceBlockEntity be
-                        ? be.getPropertyDelegate()
-                        : new SimpleContainerData(4)
+                new SimpleContainerData(4) // ✅ ALWAYS use simple data on client
         );
     }
 
@@ -116,4 +114,5 @@ public class ManaFurnaceMenu extends AbstractContainerMenu {
             this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 142));
         }
     }
+
 }
