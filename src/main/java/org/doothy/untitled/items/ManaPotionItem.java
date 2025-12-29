@@ -22,6 +22,9 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.function.BiFunction;
 
+/**
+ * A potion that restores Mana or applies a Mana Regen effect.
+ */
 public class ManaPotionItem extends Item {
 
     private final boolean isRegen;

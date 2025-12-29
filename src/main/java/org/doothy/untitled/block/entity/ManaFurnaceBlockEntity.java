@@ -28,6 +28,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
+/**
+ * BlockEntity for the Mana Furnace.
+ * Handles inventory, mana storage, and smelting logic.
+ */
 public class ManaFurnaceBlockEntity extends BlockEntity
         implements ExtendedScreenHandlerFactory<BlockPos>,
         Container,
@@ -92,6 +96,15 @@ public class ManaFurnaceBlockEntity extends BlockEntity
 
     // ───────────────────────── TICK ─────────────────────────
 
+    /**
+     * Ticks the block entity.
+     * Handles mana transfer from batteries and smelting progress.
+     *
+     * @param level  The level.
+     * @param pos    The position.
+     * @param state  The block state.
+     * @param entity The block entity instance.
+     */
     public static void tick(Level level, BlockPos pos, BlockState state, ManaFurnaceBlockEntity entity) {
         if (level.isClientSide()) return;
 

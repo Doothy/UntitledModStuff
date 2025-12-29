@@ -10,7 +10,7 @@ import org.jspecify.annotations.NonNull;
 
 /**
  * Server → Client payload for syncing mana state.
- *
+ * <p>
  * This payload is PURE DATA.
  * It does not reference attachments, storage implementations, or gameplay logic.
  *
@@ -25,7 +25,7 @@ public record ManaPayload(int mana, int capacity) implements CustomPacketPayload
 
     /**
      * Stream codec (MC 1.21.11+).
-     *
+     * <p>
      * Uses VAR_INT because:
      * - HUD-scale values
      * - Compact over the wire

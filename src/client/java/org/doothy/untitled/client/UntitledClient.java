@@ -19,6 +19,10 @@ import org.doothy.untitled.items.ManaBatteryItem;
 import org.doothy.untitled.network.ManaPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 
+/**
+ * The client-side entry point for the mod.
+ * Handles client initialization, rendering, and input.
+ */
 public class UntitledClient implements ClientModInitializer {
 
     private static boolean wasCharging = false;

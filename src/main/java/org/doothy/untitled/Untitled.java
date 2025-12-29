@@ -31,6 +31,10 @@ import org.doothy.untitled.network.ManaSyncHandler;
 import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
+/**
+ * The main entry point for the mod.
+ * Handles initialization of content, networking, and event listeners.
+ */
 public class Untitled implements ModInitializer {
 
     public static final String MOD_ID = "untitled";

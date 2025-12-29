@@ -17,6 +17,9 @@ import org.doothy.untitled.api.mana.ManaTransaction;
 import org.doothy.untitled.attachment.ModAttachments;
 import org.doothy.untitled.network.ManaSyncHandler;
 
+/**
+ * An item that stores Mana and can be charged by the player.
+ */
 public class ManaBatteryItem extends Item {
 
     private final int maxCapacity;

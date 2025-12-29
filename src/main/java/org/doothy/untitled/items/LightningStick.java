@@ -39,6 +39,16 @@ import java.util.function.Function;
 
 import static org.doothy.untitled.Untitled.WAS_ON_COOLDOWN;
 
+/**
+ * A powerful staff that channels lightning.
+ * <p>
+ * Features:
+ * <ul>
+ *     <li>Shields the user while charging.</li>
+ *     <li>Unleashes a thunderclap and chain lightning on release.</li>
+ *     <li>Consumes Mana.</li>
+ * </ul>
+ */
 public class LightningStick extends Item {
 
     public static final int MAX_WINDUP_TICKS = 72000;

@@ -6,8 +6,15 @@ import net.minecraft.resources.Identifier;
 
 import static org.doothy.untitled.Untitled.MOD_ID;
 
+/**
+ * Registry class for all custom attachments in the mod.
+ */
 public final class ModAttachments {
 
+    /**
+     * The Mana attachment.
+     * Stores mana on entities (like players).
+     */
     @SuppressWarnings("UnstableApiUsage")
     public static final AttachmentType<ManaAttachment> MANA =
             AttachmentRegistry.create(
@@ -18,6 +25,9 @@ public final class ModAttachments {
                             .initializer(() -> new ManaAttachment(100))
             );
 
+    /**
+     * Initializes the attachments.
+     */
     public static void initialize() {}
 
     private ModAttachments() {}
