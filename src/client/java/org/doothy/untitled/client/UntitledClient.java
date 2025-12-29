@@ -19,20 +19,30 @@ import org.doothy.untitled.network.ManaPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 import org.joml.Vector3f;
 
+/**
+ * The main client-side entry point for the Untitled Mod.
+ * Handles client initialization, networking receivers, HUD rendering, and screen registration.
+ */
 public class UntitledClient implements ClientModInitializer {
 
+    /**
+     * Initializes the client-side mod content.
+     */
     @Override
     public void onInitializeClient() {
         System.out.println("DEBUG: UntitledClient Initialized!");
 
+        // Initialize client-side sound helper
         LightningSoundHelper.Holder.INSTANCE = new ClientLightningSoundHelper();
 
+        // Register Mana Sync Receiver
         ClientPlayNetworking.registerGlobalReceiver(ManaPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 ClientManaCache.set(payload.current(), payload.max());
             });
         });
 
+        // Register Tooltip Callback for Mana Batteries
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
             // Check if the item is one of our batteries
             if (stack.getItem() instanceof ManaBatteryItem battery) {
@@ -47,6 +57,7 @@ public class UntitledClient implements ClientModInitializer {
             }
         });
 
+        // Register HUD Render Callback for Mana Bar
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || client.options.hideGui) return;
@@ -83,8 +94,10 @@ public class UntitledClient implements ClientModInitializer {
             guiGraphics.drawString(client.font, manaText, x + width + 5, y, 0xFFFFFFFF, true);
         });
 
+        // Register Screen Handlers
         MenuScreens.register(ModScreenHandlers.MANA_FURNACE_MENU, ManaFurnaceScreen::new);
 
+        // Reset Mana Cache on Disconnect/Join
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             ClientManaCache.set(0, 0);
         });

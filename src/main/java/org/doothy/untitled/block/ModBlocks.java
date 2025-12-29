@@ -15,8 +15,14 @@ import org.doothy.untitled.Untitled;
 
 import java.util.function.Function;
 
+/**
+ * Registry class for all custom blocks in the mod.
+ */
 public class ModBlocks {
 
+    /**
+     * The Mana Furnace block.
+     */
     public static final Block MANA_FURNACE = register("mana_furnace", key ->
             new ManaFurnaceBlock(BlockBehaviour.Properties.of()
                     .setId(key)
@@ -25,6 +31,13 @@ public class ModBlocks {
                     .strength(3.5f)
             ));
 
+    /**
+     * Registers a block and its corresponding item.
+     *
+     * @param name    The registry name of the block.
+     * @param factory A function to create the block instance.
+     * @return The registered block.
+     */
     private static Block register(String name, Function<ResourceKey<Block>, Block> factory) {
         // 1. Create IDs and Keys for both Block and Item
         Identifier id = Identifier.fromNamespaceAndPath(Untitled.MOD_ID, name);
@@ -45,6 +58,9 @@ public class ModBlocks {
         return block;
     }
 
+    /**
+     * Initializes the blocks and adds them to creative tabs.
+     */
     public static void initialize() {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(entries -> {
             entries.accept(MANA_FURNACE);

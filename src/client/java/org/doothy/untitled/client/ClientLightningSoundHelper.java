@@ -7,9 +7,16 @@ import net.minecraft.sounds.SoundSource;
 import org.doothy.untitled.items.LightningSoundHelper;
 import org.doothy.untitled.sound.ModSounds;
 
+/**
+ * Client-side implementation of the LightningSoundHelper.
+ * Handles playing the thunder sound and applying visual recoil.
+ */
 public class ClientLightningSoundHelper implements LightningSoundHelper {
     private SoundInstance activeThunderSound;
 
+    /**
+     * Starts playing the thunder sound.
+     */
     @Override
     public void start() {
         stop();
@@ -30,6 +37,9 @@ public class ClientLightningSoundHelper implements LightningSoundHelper {
         Minecraft.getInstance().getSoundManager().play(activeThunderSound);
     }
 
+    /**
+     * Stops the thunder sound.
+     */
     @Override
     public void stop() {
         if (activeThunderSound != null) {
@@ -38,6 +48,9 @@ public class ClientLightningSoundHelper implements LightningSoundHelper {
         }
     }
 
+    /**
+     * Applies a recoil effect to the player's camera and movement.
+     */
     @Override
     public void applyRecoil() {
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();

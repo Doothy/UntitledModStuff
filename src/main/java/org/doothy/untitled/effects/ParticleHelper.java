@@ -7,10 +7,16 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * Helper class for spawning particle effects.
+ */
 public class ParticleHelper {
 
     /**
      * Spawns sparks at the target point so the player knows where the bolt will land.
+     *
+     * @param level    The server level.
+     * @param position The target position.
      */
     public static void spawnTargetingSparks(ServerLevel level, Vec3 position) {
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
@@ -20,6 +26,10 @@ public class ParticleHelper {
 
     /**
      * Renders the Repel Zone Ring for the shield.
+     *
+     * @param level     The server level.
+     * @param player    The player using the shield.
+     * @param ticksUsed The number of ticks the item has been used.
      */
     public static void spawnShieldRing(ServerLevel level, Player player, int ticksUsed) {
         double radius = 2.0;
@@ -39,6 +49,9 @@ public class ParticleHelper {
 
     /**
      * Spawns particles on an entity hit by the shield.
+     *
+     * @param level  The server level.
+     * @param target The entity hit.
      */
     public static void spawnShieldHit(ServerLevel level, Entity target) {
         level.sendParticles(ParticleTypes.SCULK_SOUL, target.getX(), target.getY() + 1, target.getZ(), 3, 0.1, 0.1, 0.1, 0.05);
@@ -46,6 +59,9 @@ public class ParticleHelper {
 
     /**
      * Visual "Smoke puff" indicating shield failure.
+     *
+     * @param level  The server level.
+     * @param player The player whose shield failed.
      */
     public static void spawnShieldFizzle(ServerLevel level, Player player) {
         for (int i = 0; i < 20; i++) {
@@ -62,7 +78,11 @@ public class ParticleHelper {
     /**
      * Renders an ARCED line of particles between two points for chain lightning.
      * Uses a Quadratic Bezier Curve to create a "jump" effect.
-     * NOW PERSISTENT: Layers END_ROD particles to create a lingering after-image.
+     * Layers END_ROD particles to create a lingering after-image.
+     *
+     * @param level The server level.
+     * @param start The starting position.
+     * @param end   The ending position.
      */
     public static void spawnChainLightningLink(ServerLevel level, Vec3 start, Vec3 end) {
         double distance = start.distanceTo(end);
@@ -119,8 +139,10 @@ public class ParticleHelper {
     }
 
     /**
-     * SUMMONS VERTICAL BOLT
      * Creates a zig-zagging vertical line of flash particles from the sky to the ground.
+     *
+     * @param level The server level.
+     * @param pos   The ground position where the bolt strikes.
      */
     public static void spawnDramaticBolt(ServerLevel level, Vec3 pos) {
         double curX = pos.x;
@@ -139,6 +161,9 @@ public class ParticleHelper {
     /**
      * Creates an expanding ring of particles at the target position on impact.
      * Includes a Blast, a Sonic Boom, and a horizontal Pressure Wave.
+     *
+     * @param level The server level.
+     * @param pos   The center of the shockwave.
      */
     public static void spawnShockwave(ServerLevel level, Vec3 pos) {
         // 1. The Core Blast (Explosion)

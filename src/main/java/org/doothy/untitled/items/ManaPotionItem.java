@@ -25,6 +25,9 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.function.BiFunction;
 
+/**
+ * A potion item that restores mana or grants mana regeneration.
+ */
 public class ManaPotionItem extends Item {
     private final boolean isRegen;
 
@@ -90,7 +93,15 @@ public class ManaPotionItem extends Item {
         return 32;
     }
 
-    // Register requires a BiFunction due to the additional boolean parameter
+    /**
+     * Registers a mana potion item.
+     *
+     * @param name        The registry name.
+     * @param itemFactory A function to create the item instance.
+     * @param settings    The item properties.
+     * @param isRegen     Whether the potion grants regeneration.
+     * @return The registered item.
+     */
     public static Item register(String name, BiFunction<Properties, Boolean, Item> itemFactory, Item.Properties settings, boolean isRegen) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM,
                 Identifier.fromNamespaceAndPath(Untitled.MOD_ID, name));
@@ -101,12 +112,17 @@ public class ManaPotionItem extends Item {
         return Registry.register(BuiltInRegistries.ITEM, itemKey, item);
     }
 
+    /** Instant Mana Potion: Restores 50 Mana instantly. */
     public static final Item INSTANT_MANA_POTION = register("instant_mana_potion",
             ManaPotionItem::new, new Item.Properties().stacksTo(16), false);
 
+    /** Regen Mana Potion: Grants Mana Regeneration effect. */
     public static final Item REGEN_MANA_POTION = register("regen_mana_potion",
             ManaPotionItem::new, new Item.Properties().stacksTo(16), true);
 
+    /**
+     * Initializes the potion items and adds them to the creative tab.
+     */
     public static void initialize() {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS)
                 .register((itemGroup) -> itemGroup.accept(ManaPotionItem.INSTANT_MANA_POTION));

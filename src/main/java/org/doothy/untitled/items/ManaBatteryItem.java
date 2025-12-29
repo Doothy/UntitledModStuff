@@ -17,6 +17,10 @@ import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
 import org.doothy.untitled.network.ManaPayload;
 
+/**
+ * An item that stores mana.
+ * Can be charged by the player holding right-click.
+ */
 public class ManaBatteryItem extends Item {
 
     private final int maxCapacity;
@@ -43,6 +47,10 @@ public class ManaBatteryItem extends Item {
         return InteractionResult.CONSUME;
     }
 
+    /**
+     * Handles the charging logic while the item is being used.
+     * Transfers mana from the player to the battery.
+     */
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
         if (level.isClientSide() || !(livingEntity instanceof ServerPlayer player)) return;
@@ -114,7 +122,10 @@ public class ManaBatteryItem extends Item {
         return 0x00FFFF; // Cyan color for Mana
     }
 
-    // In ManaBatteryItem.java
+    /**
+     * Gets the maximum mana capacity of this battery.
+     * @return The maximum capacity.
+     */
     public int getMaxCapacity() {
         return this.maxCapacity;
     }

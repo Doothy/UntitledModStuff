@@ -15,11 +15,19 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Helper class for complex ability logic such as knockback and chain lightning.
+ */
 public class AbilityHelper {
 
     /**
-     * COMPLEX SNIPPET: EXPLOSIVE KNOCKBACK
      * Projects entities away from the impact point based on their distance.
+     * <p>
+     * The knockback strength decays linearly from the center.
+     *
+     * @param level  The server level.
+     * @param source The player who initiated the effect.
+     * @param pos    The center of the impact.
      */
     public static void applyThunderClap(ServerLevel level, Player source, Vec3 pos) {
         double radius = 6.0;
@@ -37,9 +45,12 @@ public class AbilityHelper {
     }
 
     /**
-     * COMPLEX SNIPPET: CHAIN LIGHTNING ALGORITHM
      * Iteratively finds the closest target that hasn't been struck yet.
      * Capable of bouncing up to 'maxJumps' times.
+     *
+     * @param level    The server level.
+     * @param source   The player who initiated the chain.
+     * @param startPos The starting position of the chain.
      */
     public static void performSustainedChain(ServerLevel level, Player source, Vec3 startPos) {
         Vec3 currentSource = startPos;

@@ -8,13 +8,22 @@ import net.minecraft.resources.Identifier;
 import org.doothy.untitled.Untitled;
 import org.jspecify.annotations.NonNull;
 
-
+/**
+ * A network payload for syncing mana data from server to client.
+ *
+ * @param current The current mana amount.
+ * @param max     The maximum mana amount.
+ */
 public record ManaPayload(int current, int max) implements CustomPacketPayload {
 
+    /** The payload type identifier. */
     public static final Type<ManaPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "mana_sync"));
 
-    // Modern 1.21.11 StreamCodec implementation
+    /**
+     * The codec for serializing and deserializing the payload.
+     * Uses modern 1.21.11 StreamCodec implementation.
+     */
     public static final StreamCodec<RegistryFriendlyByteBuf, ManaPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, ManaPayload::current,
             ByteBufCodecs.VAR_INT, ManaPayload::max,
@@ -26,5 +35,3 @@ public record ManaPayload(int current, int max) implements CustomPacketPayload {
         return TYPE;
     }
 }
-
-

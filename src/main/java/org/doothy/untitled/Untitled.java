@@ -27,21 +27,37 @@ import org.doothy.untitled.network.ManaPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
+/**
+ * The main entry point for the Untitled Mod.
+ * Handles initialization of mod content, networking, and server-side logic.
+ */
 public class Untitled implements ModInitializer {
 
+    /** The Mod ID used for resource identification. */
     public static final String MOD_ID = "untitled";
 
-    // 1. Data Component Registration
+    /**
+     * Registry holder for the Mana Regeneration effect.
+     */
     public static final Holder<MobEffect> MANA_REGEN = Registry.registerForHolder(
             BuiltInRegistries.MOB_EFFECT,
             Identifier.fromNamespaceAndPath(MOD_ID, "mana_regen"),
             new ManaRegenEffect(MobEffectCategory.BENEFICIAL, 0x00AAFF)
     );
+
+    /**
+     * Data component to track if an item was on cooldown.
+     */
     public static final DataComponentType<Boolean> WAS_ON_COOLDOWN = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
             Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "was_on_cooldown"),
             DataComponentType.<Boolean>builder().persistent(Codec.BOOL).build()
     );
+
+    /**
+     * Data component to store mana amount in items.
+     * Syncs to client for tooltip display.
+     */
     public static final DataComponentType<Integer> STORED_MANA = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
             Identifier.fromNamespaceAndPath(MOD_ID, "stored_mana"),
@@ -51,9 +67,13 @@ public class Untitled implements ModInitializer {
                     .build()
     );
 
+    /**
+     * Initializes the mod.
+     * Registers items, blocks, sounds, networking, and event handlers.
+     */
     @Override
     public void onInitialize() {
-        // 2. Initialize Mod Content
+        // Initialize Mod Content
         ModSounds.initialize();
         ModItems.initialize();
         LightningStick.initialize();
@@ -63,10 +83,10 @@ public class Untitled implements ModInitializer {
         ModBlockEntities.initialize();
         ModScreenHandlers.initialize();
 
-        // 3. Networking Registration (S2C = Server to Client)
+        // Networking Registration (S2C = Server to Client)
         PayloadTypeRegistry.playS2C().register(ManaPayload.TYPE, ManaPayload.CODEC);
 
-        // 4. SYNC ON JOIN
+        // SYNC ON JOIN
         // Forces the server to tell the client what its mana is the moment the world loads.
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
@@ -74,7 +94,7 @@ public class Untitled implements ModInitializer {
             ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
         });
 
-        // 5. MANA REGENERATION SYSTEM
+        // MANA REGENERATION SYSTEM
         // This runs on the server side every tick.
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getTickCount() % 20 != 0) return;

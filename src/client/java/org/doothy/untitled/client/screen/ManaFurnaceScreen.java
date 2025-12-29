@@ -13,6 +13,10 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+/**
+ * The screen for the Mana Furnace GUI.
+ * Handles rendering of the background, progress bars, and tooltips.
+ */
 public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> {
 
     private static final Identifier TEXTURE =

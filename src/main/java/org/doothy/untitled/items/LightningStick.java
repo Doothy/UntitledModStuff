@@ -39,6 +39,18 @@ import java.util.function.Function;
 
 import static org.doothy.untitled.Untitled.WAS_ON_COOLDOWN;
 
+/**
+ * A magical item that summons lightning and shields the user.
+ * <p>
+ * Core Mechanics:
+ * <ul>
+ *     <li><b>Charging:</b> Right-click initiates a windup. Requires 20 Mana.</li>
+ *     <li><b>Targeting:</b> Uses raycasting to find the exact block the player is looking at.</li>
+ *     <li><b>Shielding:</b> Passive 1.5-block radius "repel" zone while charging (Max 5s).</li>
+ *     <li><b>Strike:</b> On release, summons a dramatic vertical bolt and triggers a Chain Lightning event.</li>
+ *     <li><b>Chain Lightning:</b> Jumps between 12 entities with a 15% damage decay per jump.</li>
+ * </ul>
+ */
 public class LightningStick extends Item {
 
     public static final int MAX_WINDUP_TICKS = 72000;
@@ -50,6 +62,10 @@ public class LightningStick extends Item {
         super(settings);
     }
 
+    /**
+     * Handles real-time visual feedback and the defensive shield.
+     * Includes logic to fizzle the shield after 5 seconds.
+     */
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, EquipmentSlot slot) {
         if (!(entity instanceof Player player)) return;

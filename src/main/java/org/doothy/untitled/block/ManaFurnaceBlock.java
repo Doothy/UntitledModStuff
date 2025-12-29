@@ -17,6 +17,9 @@ import org.doothy.untitled.block.entity.ManaFurnaceBlockEntity;
 import org.doothy.untitled.block.entity.ModBlockEntities;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A custom furnace block that uses mana.
+ */
 public class ManaFurnaceBlock extends BaseEntityBlock {
     public static final MapCodec<ManaFurnaceBlock> CODEC = simpleCodec(ManaFurnaceBlock::new);
 
@@ -29,9 +32,12 @@ public class ManaFurnaceBlock extends BaseEntityBlock {
         return CODEC;
     }
 
+    /**
+     * Defines the render shape of the block.
+     * Essential for the block to actually render the model, unlike standard BlockEntities.
+     */
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // Essential for the block to actually render the model, unlike standard BlockEntities
         return RenderShape.MODEL;
     }
 
@@ -40,6 +46,10 @@ public class ManaFurnaceBlock extends BaseEntityBlock {
         return new ManaFurnaceBlockEntity(pos, state);
     }
 
+    /**
+     * Handles block interaction (right-click).
+     * Opens the furnace GUI.
+     */
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide()) {
@@ -52,9 +62,12 @@ public class ManaFurnaceBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
+    /**
+     * Provides the ticker for the block entity.
+     * Connects the ticking logic.
+     */
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        // Connects the ticking logic
         return createTickerHelper(type, ModBlockEntities.MANA_FURNACE_BE, ManaFurnaceBlockEntity::tick);
     }
 }

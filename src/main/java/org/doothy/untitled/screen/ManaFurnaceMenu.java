@@ -11,11 +11,21 @@ import net.minecraft.world.item.ItemStack;
 import org.doothy.untitled.block.entity.ManaFurnaceBlockEntity;
 import org.doothy.untitled.items.ManaBatteryItem;
 
+/**
+ * The menu handler for the Mana Furnace GUI.
+ * Handles slot layout and data synchronization between server and client.
+ */
 public class ManaFurnaceMenu extends AbstractContainerMenu {
     private final Container container;
     private final ContainerData data;
 
-    // Client Constructor
+    /**
+     * Client-side constructor.
+     *
+     * @param syncId    The synchronization ID.
+     * @param playerInv The player's inventory.
+     * @param pos       The position of the block entity.
+     */
     public ManaFurnaceMenu(int syncId, Inventory playerInv, BlockPos pos) {
         this(
                 syncId,
@@ -29,7 +39,14 @@ public class ManaFurnaceMenu extends AbstractContainerMenu {
         );
     }
 
-    // Server Constructor
+    /**
+     * Server-side constructor.
+     *
+     * @param syncId          The synchronization ID.
+     * @param playerInventory The player's inventory.
+     * @param container       The container (block entity).
+     * @param data            The data delegate for syncing integers.
+     */
     public ManaFurnaceMenu(int syncId, Inventory playerInventory, Container container, ContainerData data) {
         super(ModScreenHandlers.MANA_FURNACE_MENU, syncId);
         this.container = container;

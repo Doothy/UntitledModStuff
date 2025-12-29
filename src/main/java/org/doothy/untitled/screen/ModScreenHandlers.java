@@ -8,7 +8,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
 import org.doothy.untitled.Untitled;
 
+/**
+ * Registry class for all custom screen handlers (menus) in the mod.
+ */
 public class ModScreenHandlers {
+    /**
+     * The MenuType for the Mana Furnace.
+     */
     public static final MenuType<ManaFurnaceMenu> MANA_FURNACE_MENU = Registry.register(
             BuiltInRegistries.MENU,
             Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "mana_furnace_menu"),
@@ -18,5 +24,8 @@ public class ModScreenHandlers {
             )
     );
 
+    /**
+     * Initializes the screen handlers.
+     */
     public static void initialize() {}
 }

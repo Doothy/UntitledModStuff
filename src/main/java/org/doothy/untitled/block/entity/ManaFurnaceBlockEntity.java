@@ -30,6 +30,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
+/**
+ * The BlockEntity for the Mana Furnace.
+ * Handles inventory, mana storage, and smelting logic.
+ */
 public class ManaFurnaceBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos>, Container {
 
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(3, ItemStack.EMPTY);
@@ -81,6 +85,10 @@ public class ManaFurnaceBlockEntity extends BlockEntity implements ExtendedScree
         };
     }
 
+    /**
+     * Ticks the block entity.
+     * Handles mana recharging from batteries and smelting items.
+     */
     public static void tick(Level level, BlockPos pos, BlockState state, ManaFurnaceBlockEntity entity) {
         if (level.isClientSide()) return;
 
@@ -144,6 +152,10 @@ public class ManaFurnaceBlockEntity extends BlockEntity implements ExtendedScree
             setChanged(level, pos, state);
         }
     }
+
+    /**
+     * Checks if the current input item has a valid smelting recipe.
+     */
     private boolean hasRecipe() {
         if (this.level == null || this.level.isClientSide()) return false;
 
@@ -172,6 +184,9 @@ public class ManaFurnaceBlockEntity extends BlockEntity implements ExtendedScree
         return this.propertyDelegate;
     }
 
+    /**
+     * Crafts the item and updates the inventory.
+     */
     private void craftItem() {
         if (this.level == null || this.level.isClientSide()) return;
 

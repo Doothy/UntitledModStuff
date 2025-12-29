@@ -14,7 +14,20 @@ import org.doothy.untitled.Untitled;
 
 import java.util.function.Function;
 
+/**
+ * Registry class for all custom items in the mod.
+ */
 public class ModItems {
+
+    /**
+     * Registers an item.
+     *
+     * @param name        The registry name of the item.
+     * @param itemFactory A function to create the item instance.
+     * @param settings    The item properties.
+     * @param <GenericItem> The type of the item.
+     * @return The registered item.
+     */
     public static <GenericItem extends Item> GenericItem register(String name,
                                                                   Function<Item.Properties, GenericItem> itemFactory,
                                                                   Item.Properties settings){
@@ -31,19 +44,27 @@ public class ModItems {
         return item;
     }
 
+    /** A suspicious substance item. */
     public static final Item SUSPICIOUS_SUBSTANCE = register("suspicious_substance", Item::new, new Item.Properties());
 
     // BATTERIES
-    // Tier 1: Stores 500 Mana, Drains 1 per tick
+    /**
+     * Tier 1 Mana Battery: Stores 500 Mana, Drains 1 per tick.
+     */
     public static final Item WEAK_MANA_BATTERY = register("weak_mana_battery",
             p -> new ManaBatteryItem(p, 500, 1),
             new Item.Properties());
 
-    // Tier 2: Stores 5000 Mana, Drains 5 per tick
+    /**
+     * Tier 2 Mana Battery: Stores 5000 Mana, Drains 5 per tick.
+     */
     public static final Item DENSE_MANA_BATTERY = register("dense_mana_battery",
             p -> new ManaBatteryItem(p, 5000, 5),
             new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE));
 
+    /**
+     * Initializes the items and adds them to creative tabs and other registries.
+     */
     public static void initialize(){
         // Get the event for modifying entries in the (for example) ingredients group
         // Register an event handler that adds the item to the corresponding item group
