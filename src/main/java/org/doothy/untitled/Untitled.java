@@ -13,6 +13,8 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.block.ModBlocks;
+import org.doothy.untitled.block.entity.ModBlockEntities;
 import org.doothy.untitled.effect.ManaRegenEffect;
 import org.doothy.untitled.items.LightningStick;
 import org.doothy.untitled.items.ManaPotionItem;
@@ -22,6 +24,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.component.DataComponentType;
 import com.mojang.serialization.Codec;
 import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
 public class Untitled implements ModInitializer {
@@ -56,6 +59,9 @@ public class Untitled implements ModInitializer {
         LightningStick.initialize();
         ModAttachments.initialize();
         ManaPotionItem.initialize();
+        ModBlocks.initialize();
+        ModBlockEntities.initialize();
+        ModScreenHandlers.initialize();
 
         // 3. Networking Registration (S2C = Server to Client)
         PayloadTypeRegistry.playS2C().register(ManaPayload.TYPE, ManaPayload.CODEC);
@@ -71,38 +77,19 @@ public class Untitled implements ModInitializer {
         // 5. MANA REGENERATION SYSTEM
         // This runs on the server side every tick.
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            // Regeneration happens once every 20 ticks (1 second)
-            if (server.getTickCount() % 20 == 0) {
-                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                    ManaAttachment mana = player.getAttached(ModAttachments.MANA);
+            if (server.getTickCount() % 20 != 0) return;
 
-                    // Only regen if player has mana data and isn't already full
-                    if (mana != null && mana.getMana() < mana.getMaxMana()) {
-                        int newMana = Math.min(mana.getMaxMana(), mana.getMana() + 1);
-                        mana.setMana(newMana);
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                ManaAttachment mana = player.getAttached(ModAttachments.MANA);
+                if (mana == null || mana.getMana() >= mana.getMaxMana()) continue;
 
-                        // Critical: Flag the attachment as changed on the server
-                        player.setAttached(ModAttachments.MANA, mana);
+                int amount = player.hasEffect(MANA_REGEN) ? 5 : 1;
+                mana.setMana(Math.min(mana.getMaxMana(), mana.getMana() + amount));
 
-                        // Sync the new value to the client HUD immediately
-                        ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
-                    }
-                }
-            }
-        });
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (server.getTickCount() % 20 == 0) {
-                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                    ManaAttachment mana = player.getAttached(ModAttachments.MANA);
-                    if (mana != null && mana.getMana() < mana.getMaxMana()) {
-                        // Check if player has the effect
-                        int amount = player.hasEffect(MANA_REGEN) ? 5 : 1;
-                        mana.setMana(Math.min(mana.getMaxMana(), mana.getMana() + amount));
-
-                        player.setAttached(ModAttachments.MANA, mana);
-                        ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));
-                    }
-                }
+                ServerPlayNetworking.send(
+                        player,
+                        new ManaPayload(mana.getMana(), mana.getMaxMana())
+                );
             }
         });
     }

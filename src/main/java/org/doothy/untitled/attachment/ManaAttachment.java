@@ -11,7 +11,7 @@ public class ManaAttachment {
     ).apply(instance, ManaAttachment::new));
 
     private int mana;
-    private final int maxMana;
+    private int maxMana;
 
     public ManaAttachment(int mana, int maxMana) {
         this.mana = mana;

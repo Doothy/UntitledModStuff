@@ -26,6 +26,7 @@ public class ManaBatteryItem extends Item {
         super(properties.stacksTo(1)); // Batteries shouldn't stack
         this.maxCapacity = maxCapacity;
         this.transferRate = transferRate;
+
     }
 
     @Override
@@ -35,7 +36,7 @@ public class ManaBatteryItem extends Item {
         int currentStored = stack.getOrDefault(Untitled.STORED_MANA, 0);
 
         if (currentStored >= getMaxCapacity()) {
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
 
         player.startUsingItem(usedHand);
@@ -69,7 +70,6 @@ public class ManaBatteryItem extends Item {
         if (amountToTransfer > 0) {
             // Update Player
             mana.setMana(mana.getMana() - amountToTransfer);
-            player.setAttached(ModAttachments.MANA, mana);
 
             // SYNC PLAYER MANA TO CLIENT (Important!)
             ServerPlayNetworking.send(player, new ManaPayload(mana.getMana(), mana.getMaxMana()));

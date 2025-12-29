@@ -2,17 +2,21 @@ package org.doothy.untitled.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
 import org.doothy.untitled.Untitled;
 import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.client.screen.ManaFurnaceScreen;
 import org.doothy.untitled.items.LightningSoundHelper;
 import org.doothy.untitled.items.ManaBatteryItem;
 import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.screen.ModScreenHandlers;
 import org.joml.Vector3f;
 
 public class UntitledClient implements ClientModInitializer {
@@ -25,10 +29,7 @@ public class UntitledClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(ManaPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
-                if (context.client().player != null) {
-                    context.client().player.setAttached(ModAttachments.MANA,
-                            new ManaAttachment(payload.current(), payload.max()));
-                }
+                ClientManaCache.set(payload.current(), payload.max());
             });
         });
 
@@ -49,9 +50,11 @@ public class UntitledClient implements ClientModInitializer {
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player == null || client.options.hideGui) return;
+            if (!ClientManaCache.isValid()) return;
 
-            ManaAttachment mana = client.player.getAttached(ModAttachments.MANA);
-            if (mana == null) return;
+            int mana = ClientManaCache.mana;
+            int maxMana = ClientManaCache.maxMana;
+            float ratio = maxMana > 0 ? (float) mana / maxMana : 0;
 
             // Position and Size
             int x = 10;
@@ -60,7 +63,7 @@ public class UntitledClient implements ClientModInitializer {
             int height = 8;
 
             // Calculate fill
-            float ratio = (float) mana.getMana() / mana.getMaxMana();
+
             int progress = (int) (width * ratio);
 
             // 1. Draw Background (Darker blue-black)
@@ -76,8 +79,17 @@ public class UntitledClient implements ClientModInitializer {
             guiGraphics.renderOutline(x - 1, y - 1, width + 2, height + 2, 0xFFAAAAAA);
 
             // 5. Mana Text (Centered or Inline)
-            String manaText = mana.getMana() + " / " + mana.getMaxMana();
+            String manaText = mana + " / " + maxMana;
             guiGraphics.drawString(client.font, manaText, x + width + 5, y, 0xFFFFFFFF, true);
+        });
+
+        MenuScreens.register(ModScreenHandlers.MANA_FURNACE_MENU, ManaFurnaceScreen::new);
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            ClientManaCache.set(0, 0);
+        });
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            ClientManaCache.set(0, 0);
         });
     }
 }
