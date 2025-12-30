@@ -22,6 +22,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.doothy.untitled.Untitled;
 import org.doothy.untitled.api.mana.*;
 import org.doothy.untitled.attachment.ManaAttachment;
+import org.doothy.untitled.block.ManaFurnaceBlock;
 import org.doothy.untitled.items.ManaBatteryItem;
 import org.doothy.untitled.screen.ManaFurnaceMenu;
 import org.jetbrains.annotations.Nullable;
@@ -154,6 +155,18 @@ public class ManaFurnaceBlockEntity extends BlockEntity
         } else if (entity.progress > 0) {
             entity.progress = 0;
             dirty = true;
+        }
+
+        // 3. VISUAL STATE
+        boolean lit = state.getValue(ManaFurnaceBlock.LIT);
+        boolean shouldBeLit = entity.progress > 0;
+
+        if (lit != shouldBeLit) {
+            level.setBlock(
+                    pos,
+                    state.setValue(ManaFurnaceBlock.LIT, shouldBeLit),
+                    3
+            );
         }
 
         if (dirty) {

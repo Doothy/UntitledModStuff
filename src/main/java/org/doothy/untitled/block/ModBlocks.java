@@ -29,6 +29,7 @@ public class ModBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(3.5f)
+                    .lightLevel(state -> state.getValue(ManaFurnaceBlock.LIT) ? 13 : 0)
             ));
 
     /**
