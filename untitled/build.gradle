@@ -1,4 +1,3 @@
-package org.doothy.untitled
 
 plugins {
     id "fabric-loom"
@@ -7,8 +6,6 @@ plugins {
 
 loom {
     splitEnvironmentSourceSets()
-
-    enableModSources = true
 
     mods {
         "untitled" {

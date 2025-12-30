@@ -1,4 +1,3 @@
-package org.doothy.untitled.api
 
 dependencies {
     // No fabric-api here unless the API itself needs it
