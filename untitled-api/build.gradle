@@ -1,33 +1,19 @@
 plugins {
-    id "fabric-loom"
+    id "java-library"
 }
 
-// Ensure placeholders in fabric.mod.json are expanded
-processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.findProperty("minecraft_version")
-    inputs.property "loader_version", project.findProperty("loader_version")
-
-    filesMatching("fabric.mod.json") {
-        expand(
-                [
-                        version           : project.version,
-                        minecraft_version : project.findProperty("minecraft_version"),
-                        loader_version    : project.findProperty("loader_version")
-                ]
-        )
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.officialMojangMappings()
-
-    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
-    // Only add fabric-api if the API actually uses it
+    // NO minecraft
+    // NO fabric-loader
+    // NO fabric-api
 }
 
-// The API sources live under src/api; map them to the main source set
 sourceSets {
     main {
         java.srcDirs = ["src/api/java"]
