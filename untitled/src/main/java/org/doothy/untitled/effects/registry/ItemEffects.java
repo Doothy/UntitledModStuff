@@ -1,0 +1,31 @@
+package org.doothy.untitled.effects.registry;
+
+import net.minecraft.sounds.SoundSource;
+import org.doothy.untitled.effects.*;
+import org.doothy.untitled.effects.combat.ChainLightningEffect;
+import org.doothy.untitled.effects.combat.LightningStrikeEffect;
+import org.doothy.untitled.effects.combat.ShockwaveEffect;
+import org.doothy.untitled.effects.sound.PositionedSoundEffect;
+import org.doothy.untitled.sound.ModSounds;
+
+public final class ItemEffects {
+
+    public static final ItemEffect LIGHTNING_STRIKE =
+            new LightningStrikeEffect();
+
+    public static final ItemEffect LIGHTNING_SHOCKWAVE =
+            new ShockwaveEffect();
+
+    public static final ItemEffect CHAIN_LIGHTNING =
+            new ChainLightningEffect();
+
+    public static final ItemEffect LIGHTNING_SOUND = ctx ->
+            new PositionedSoundEffect(
+                    ModSounds.THUNDER_HIT,
+                    SoundSource.PLAYERS,
+                    4.0f,
+                    1.0f
+            ).play(ctx.level(), ctx.hitPosition());
+
+    private ItemEffects() {}
+}

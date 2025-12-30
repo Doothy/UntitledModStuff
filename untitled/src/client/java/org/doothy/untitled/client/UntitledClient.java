@@ -13,6 +13,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.Untitled;
 import org.doothy.untitled.client.screen.ManaFurnaceScreen;
+//import org.doothy.untitled.client.visual.LightningShieldVisual;
+//import org.doothy.untitled.client.visual.LightningVisualHandler;
+import org.doothy.untitled.client.visual.LightningShieldVisual;
+import org.doothy.untitled.client.visual.LightningVisualHandler;
 import org.doothy.untitled.items.LightningSoundHelper;
 import org.doothy.untitled.items.LightningStick;
 import org.doothy.untitled.items.ManaBatteryItem;
@@ -41,6 +45,8 @@ public class UntitledClient implements ClientModInitializer {
                     ClientManaCache.set(payload.mana(), payload.capacity());
                 })
         );
+        LightningVisualHandler.register();
+        LightningShieldVisual.register();
 
         // ───────────────────────── TOOLTIP ─────────────────────────
 

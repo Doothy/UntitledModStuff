@@ -62,6 +62,22 @@ public class ModItems {
             p -> new ManaBatteryItem(p, 5000, 5),
             new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE));
 
+
+    public static final ResourceKey<Item> LIGHTNING_STICK_KEY =
+            ResourceKey.create(
+                    Registries.ITEM,
+                    Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "lightning_stick")
+            );
+
+    public static final Item LIGHTNING_STICK = Registry.register(
+            BuiltInRegistries.ITEM,
+            LIGHTNING_STICK_KEY.identifier(),
+            new LightningStick(
+                    new Item.Properties()
+                            .stacksTo(1)
+                            .setId(LIGHTNING_STICK_KEY)
+            )
+    );
     /**
      * Initializes the items and adds them to creative tabs and other registries.
      */
@@ -77,6 +93,7 @@ public class ModItems {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register((itemGroup) -> {
             itemGroup.accept(WEAK_MANA_BATTERY);
             itemGroup.accept(DENSE_MANA_BATTERY);
+            itemGroup.accept(LIGHTNING_STICK);
         });
 
         // Add an item to Fuels Registry, a second has 20 ticks, so we declare time in

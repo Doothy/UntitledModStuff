@@ -28,6 +28,7 @@ import org.doothy.untitled.items.ManaPotionItem;
 import org.doothy.untitled.items.ModItems;
 import org.doothy.untitled.network.ManaPayload;
 import org.doothy.untitled.network.ManaSyncHandler;
+import org.doothy.untitled.network.payload.LightningVisualPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
@@ -74,7 +75,6 @@ public class Untitled implements ModInitializer {
         // Content
         ModSounds.initialize();
         ModItems.initialize();
-        LightningStick.initialize();
         ModAttachments.initialize();
         ManaPotionItem.initialize();
         ModBlocks.initialize();
@@ -83,6 +83,11 @@ public class Untitled implements ModInitializer {
 
         // Networking
         PayloadTypeRegistry.playS2C().register(ManaPayload.TYPE, ManaPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(
+                LightningVisualPayload.TYPE,
+                LightningVisualPayload.CODEC
+        );
+
 
         // ───────────────────────── SYNC (SAFE TIMING) ─────────────────────────
 
