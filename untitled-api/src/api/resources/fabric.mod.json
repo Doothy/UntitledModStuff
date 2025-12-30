@@ -1,7 +1,11 @@
 {
-  "id": "untitled-api",
-  "version": "1.0.0",
-  "environment": "*",
   "schemaVersion": 1,
-  "name": "Untitled Mana API"
+  "id": "untitled-api",
+  "version": "${version}",
+  "name": "Untitled Mana API",
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}"
+  }
 }

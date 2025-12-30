@@ -15,6 +15,24 @@ loom {
     }
 }
 
+// Ensure placeholders in fabric.mod.json are expanded
+processResources {
+    // Inputs for Gradle up-to-date checks
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", project.findProperty("minecraft_version")
+    inputs.property "loader_version", project.findProperty("loader_version")
+
+    filesMatching("fabric.mod.json") {
+        expand(
+                [
+                        version           : project.version,
+                        minecraft_version : project.findProperty("minecraft_version"),
+                        loader_version    : project.findProperty("loader_version")
+                ]
+        )
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.officialMojangMappings()
@@ -22,5 +40,10 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
 
-    modApi project(":untitled-api")
+    // Treat untitled-api as a plain Java dependency during compile/configuration to avoid Loom metadata reads at config time.
+    // It is still a standalone mod (has its own fabric.mod.json) and will be on the run classpath.
+    api(project(path: ":untitled-api", configuration: "namedElements"))
+
+    // Ensure the API is present as a separate mod at runtime for client/server runs
+    modLocalRuntime project(":untitled-api")
 }
