@@ -17,6 +17,8 @@ public class ModSounds {
     /** Thunder hit sound event. */
     public static final SoundEvent THUNDER_HIT = registerSound("thunder_hit");
 
+    public static final SoundEvent AVADAKEDAVRA = registerSound("avadakedavra");
+
     /**
      * Registers a sound event.
      *

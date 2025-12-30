@@ -12,5 +12,12 @@
     "sounds": [
       "untitled:thunder_hit"
     ]
+  },
+  "avadakedavra": {
+    "category": "weather",
+    "subtitle": "subtitles.untitled.avadakedavra",
+    "sounds": [
+      "untitled:avadakedavra"
+    ]
   }
 }
