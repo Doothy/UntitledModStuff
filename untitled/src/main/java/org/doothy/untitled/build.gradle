@@ -1,0 +1,29 @@
+package org.doothy.untitled
+
+plugins {
+    id "fabric-loom"
+    id "maven-publish"
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    enableModSources = true
+
+    mods {
+        "untitled" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+
+    modApi project(":untitled-api")
+}

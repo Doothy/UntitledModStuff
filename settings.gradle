@@ -5,5 +5,12 @@ pluginManagement {
             url = 'https://maven.fabricmc.net/'
         }
         gradlePluginPortal()
+        mavenCentral()
+    }
+    plugins {
+        id 'fabric-loom' version providers.gradleProperty('loom_version').get()
     }
 }
+rootProject.name = "untitled-root"
+
+include("untitled-api", "untitled")
