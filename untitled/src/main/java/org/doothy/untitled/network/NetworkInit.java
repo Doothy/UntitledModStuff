@@ -33,7 +33,7 @@ public final class NetworkInit {
         );
         PayloadTypeRegistry.playS2C().register(
                 ShieldPayload.TYPE,
-                ShieldPayload.STREAM_CODEC
+                ShieldPayload.CODEC
         );
     }
 }

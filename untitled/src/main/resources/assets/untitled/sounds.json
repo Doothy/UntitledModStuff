@@ -7,7 +7,7 @@
     ]
   },
   "thunder_hit": {
-    "category": "weather",
+    "category": "player",
     "subtitle": "subtitles.untitled.thunder_hit",
     "sounds": [
       "untitled:thunder_hit"

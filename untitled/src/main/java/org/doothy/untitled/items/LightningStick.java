@@ -66,6 +66,8 @@ public class LightningStick extends AbstractMagicItem {
      */
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        // Ensure a fresh state for this use attempt even if a previous charge was cancelled
+        stack.remove(Untitled.SHIELD_USED_THIS_USE);
 
         if (!level.isClientSide()) {
             if (!manaPolicy.hasMana(player)) return InteractionResult.FAIL;

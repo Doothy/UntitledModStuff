@@ -1,6 +1,6 @@
 package org.doothy.untitled.network.payload;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -18,7 +18,7 @@ public record ShieldPayload(int ticks) implements CustomPacketPayload {
             new Type<>(Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "shield"));
 
     /** Stream codec encoding the remaining ticks as a VAR_INT. */
-    public static final StreamCodec<FriendlyByteBuf, ShieldPayload> STREAM_CODEC =
+    public static final StreamCodec<RegistryFriendlyByteBuf, ShieldPayload> CODEC =
             StreamCodec.of(
                     (buf, payload) -> buf.writeVarInt(payload.ticks),
                     buf -> new ShieldPayload(buf.readVarInt())

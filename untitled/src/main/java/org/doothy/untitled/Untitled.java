@@ -1,10 +1,8 @@
 package org.doothy.untitled;
 
-import com.google.common.graph.Network;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Holder;
@@ -31,7 +29,6 @@ import org.doothy.untitled.items.ModItems;
 import org.doothy.untitled.network.NetworkInit;
 import org.doothy.untitled.network.payload.ManaPayload;
 import org.doothy.untitled.network.ManaSyncHandler;
-import org.doothy.untitled.network.payload.LightningVisualPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
@@ -95,7 +92,6 @@ public class Untitled implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             server.execute(() -> {
                 ServerPlayer player = handler.player;
-                ManaStorage mana = player.getAttachedOrCreate(ModAttachments.MANA);
                 ManaSyncHandler.sync(player);
             });
         });

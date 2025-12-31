@@ -1,7 +1,6 @@
 package org.doothy.untitled.client.visual;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -23,14 +22,14 @@ public final class LightningChargePreviewHandler {
                 return;
             }
 
-            ItemStack using = player.getUseItem();
-            if (!(using.getItem() instanceof LightningStick)) {
+            // Only while actively charging
+            if (!player.isUsingItem()) {
                 LightningTargetPreview.clear();
                 return;
             }
 
-            // Only while actively charging
-            if (!player.isUsingItem()) {
+            ItemStack using = player.getUseItem();
+            if (!(using.getItem() instanceof LightningStick)) {
                 LightningTargetPreview.clear();
                 return;
             }

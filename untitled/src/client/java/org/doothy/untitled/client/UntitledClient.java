@@ -10,18 +10,15 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.Untitled;
-import org.doothy.untitled.attachment.ModAttachments;
-import org.doothy.untitled.attachment.ShieldAttachment;
 import org.doothy.untitled.client.screen.ManaFurnaceScreen;
+import org.doothy.untitled.client.sound.LightningChargeAudioHandler;
 import org.doothy.untitled.client.visual.*;
-import org.doothy.untitled.items.LightningSoundHelper;
-import org.doothy.untitled.items.LightningStick;
 import org.doothy.untitled.items.ManaBatteryItem;
 import org.doothy.untitled.network.payload.ManaPayload;
 import org.doothy.untitled.network.payload.ShieldPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
+import net.minecraft.util.Mth;
 
 /**
  * Client-side entry point that wires client networking listeners, HUD rendering,
@@ -29,9 +26,7 @@ import org.doothy.untitled.screen.ModScreenHandlers;
  */
 public class UntitledClient implements ClientModInitializer {
 
-    private static boolean wasCharging = false;
-
-    private static int chargeTicks = 0;
+    // Charge sound/preview are handled by dedicated visual handlers
     @Override
     /**
      * Initializes client listeners and UI components:
@@ -40,7 +35,7 @@ public class UntitledClient implements ClientModInitializer {
      * - Screen registration and per-tick tasks for previews and sounds
      */
     public void onInitializeClient() {
-        LightningSoundHelper.Holder.INSTANCE = new ClientLightningSoundHelper();
+        // Register client-side visual/audio handlers
 
         ClientPlayNetworking.registerGlobalReceiver(
                 ManaPayload.TYPE,
@@ -52,6 +47,7 @@ public class UntitledClient implements ClientModInitializer {
         LightningShieldVisual.register();
         ChainLightningVisualHandler.register();
         LightningChargePreviewHandler.register();
+        LightningChargeAudioHandler.register();
 
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
             if (stack.getItem() instanceof ManaBatteryItem battery) {
@@ -78,7 +74,7 @@ public class UntitledClient implements ClientModInitializer {
 
             int mana = ClientManaCache.getMana();
             int maxMana = ClientManaCache.getCapacity();
-            float ratio = ClientManaCache.getFillRatio();
+            float ratio = Mth.clamp(ClientManaCache.getFillRatio(), 0f, 1f);
 
             int x = 10;
             int y = 10;
@@ -107,33 +103,14 @@ public class UntitledClient implements ClientModInitializer {
                 ManaFurnaceScreen::new
         );
 
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientManaCache.reset());
-
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null) return;
-
-            Player player = client.player;
-
-            boolean charging =
-                    player.isUsingItem() &&
-                            player.getUseItem().getItem() instanceof LightningStick;
-            // Start charging: begin charge sound and reset counter
-            if (charging && !wasCharging) {
-                chargeTicks = 0;
-                LightningSoundHelper.Holder.INSTANCE.start();
-            }
-            // While charging: increment local counter
-            if (charging) {
-                chargeTicks++;
-            }
-            // Cancelled before completion: stop sound and reset
-            if (!charging && wasCharging) {
-                LightningSoundHelper.Holder.INSTANCE.stop();
-                chargeTicks = 0;
-            }
-
-            wasCharging = charging;
+        // Single disconnect handler: reset all client caches/visuals
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            ClientManaCache.reset();
+            ClientShieldCache.reset();
+            LightningTargetPreview.clear();
         });
+
+        // Charge audio is handled in LightningChargeAudioHandler
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level != null) {
@@ -150,10 +127,6 @@ public class UntitledClient implements ClientModInitializer {
                     }
                 })
         );
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            ClientManaCache.reset();
-            ClientShieldCache.reset();
-        });
 
     }
 }
