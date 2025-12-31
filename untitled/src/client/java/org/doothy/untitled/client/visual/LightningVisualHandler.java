@@ -42,30 +42,17 @@ public final class LightningVisualHandler {
         if (level == null) return;
 
         RandomSource random = level.random;
+        double height = 12 + charge * 10; // keep a dramatic skyward endpoint
 
-        int segments = 10 + (int)(charge * 15);
-        double height = 12 + charge * 10;
-
-        Vec3 start = hitPos.add(
+        // Per request: make the arc start at the target position and reach upward into the sky
+        Vec3 start = hitPos;
+        Vec3 end = hitPos.add(
                 random.nextGaussian() * 0.3,
                 height,
                 random.nextGaussian() * 0.3
         );
 
-        Vec3 prev = start;
-
-        for (int i = 0; i < segments; i++) {
-            float t = (float)(i + 1) / segments;
-
-            Vec3 next = start.lerp(hitPos, t).add(
-                    random.nextGaussian() * 0.2,
-                    random.nextGaussian() * 0.2,
-                    random.nextGaussian() * 0.2
-            );
-
-            spawnArc(level, prev, next);
-            prev = next;
-        }
+        LightningArc.spawnBezierArc(level, start, end, 0.15, 10.0, 250);
 
         // Impact visuals — exactly once
         spawnStrikeMarker(level, hitPos);
@@ -93,17 +80,5 @@ public final class LightningVisualHandler {
         }
     }
 
-    private static void spawnArc(ClientLevel level, Vec3 a, Vec3 b) {
-        Vec3 delta = b.subtract(a);
-        int steps = 4;
-
-        for (int i = 0; i <= steps; i++) {
-            Vec3 p = a.add(delta.scale(i / (double)steps));
-            level.addParticle(
-                    ParticleTypes.ELECTRIC_SPARK,
-                    p.x, p.y, p.z,
-                    0, 0, 0
-            );
-        }
-    }
+    // straight-segment helper removed in favor of Bezier-based LightningArc
 }
