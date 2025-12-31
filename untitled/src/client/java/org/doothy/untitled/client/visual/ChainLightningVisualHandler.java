@@ -3,6 +3,7 @@ package org.doothy.untitled.client.visual;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.network.payload.ChainLightningVisualPayload;
 
 public final class ChainLightningVisualHandler {
@@ -21,7 +22,11 @@ public final class ChainLightningVisualHandler {
                         Entity to = level.getEntity(payload.toId());
                         if (from == null || to == null) return;
 
-                        // Per request: use the target entity position as the arc's start
+                        // prevent the arc from connecting to the player (caster).
+                        // The chain should appear to start from the first target.
+                        if (from instanceof Player) return;
+
+                        // use the target entity position as the arc's start
                         // and link it back to the source. Use a high-arched Bezier with jitter.
                         var start = to.position().add(0, to.getBbHeight() * 0.5, 0);
                         var end = from.position().add(0, from.getBbHeight() * 0.5, 0);
