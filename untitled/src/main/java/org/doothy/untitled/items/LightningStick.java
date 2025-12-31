@@ -11,27 +11,32 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.doothy.untitled.Untitled;
+import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.attachment.ShieldAttachment;
 import org.doothy.untitled.combat.RaycastTargeting;
 import org.doothy.untitled.effects.ChargeTickEffect;
 import org.doothy.untitled.effects.EffectContext;
 import org.doothy.untitled.effects.combat.ShieldDuringChargeEffect;
-import org.doothy.untitled.effects.registry.ItemEffects;
 import org.doothy.untitled.effects.policy.AttachmentManaCostPolicy;
 import org.doothy.untitled.effects.policy.SimpleItemCooldownPolicy;
+import org.doothy.untitled.effects.registry.ItemEffects;
 import org.doothy.untitled.network.payload.LightningVisualPayload;
+import org.doothy.untitled.network.payload.ShieldPayload;
 
 public class LightningStick extends AbstractMagicItem {
 
     private static final int MAX_USE_TICKS = 72000;
     private static final int REQUIRED_CHARGE = 20;
     private static final int SHIELD_DURATION_TICKS = 100;
-    private static final double TARGET_REACH = 25.0D;
 
+    public static final double TARGET_REACH = 25.0D;
     private static final double SHIELD_RADIUS = 1.5;
 
     private static final ChargeTickEffect SHIELD_EFFECT =
-            new ShieldDuringChargeEffect(100, 1.5);
+            new ShieldDuringChargeEffect(SHIELD_DURATION_TICKS, SHIELD_RADIUS);
 
     public LightningStick(Properties properties) {
         super(
@@ -56,7 +61,7 @@ public class LightningStick extends AbstractMagicItem {
         return InteractionResult.CONSUME;
     }
 
-    /* ───────────────────────── CHARGING SHIELD ───────────────────────── */
+    /* ───────────────────────── CHARGING ───────────────────────── */
 
     @Override
     public void onUseTick(Level level, LivingEntity user, ItemStack stack, int remaining) {
@@ -64,7 +69,7 @@ public class LightningStick extends AbstractMagicItem {
         SHIELD_EFFECT.onChargeTick(level, user, stack, elapsed);
     }
 
-    /* ───────────────────────── RELEASE ───────────────────────── */
+    /* ───────────────────────── RELEASE / CANCEL ───────────────────────── */
 
     @Override
     public boolean releaseUsing(
@@ -73,15 +78,37 @@ public class LightningStick extends AbstractMagicItem {
             LivingEntity entity,
             int timeLeft
     ) {
+        // reset per-use flag
+        stack.remove(Untitled.SHIELD_USED_THIS_USE);
+
         if (!(entity instanceof Player player)) return false;
         if (!(level instanceof ServerLevel serverLevel)) return false;
 
         int elapsed = getUseDuration(stack, player) - timeLeft;
-        if (elapsed < REQUIRED_CHARGE) return false;
+
+        // ── ALWAYS stop shield when use ends ──
+        ShieldAttachment shield =
+                player.getAttachedOrCreate(ModAttachments.LIGHTNING_SHIELD);
+
+        if (shield.ticks() > 0) {
+            shield.setTicks(0);
+
+            ServerPlayNetworking.send(
+                    (ServerPlayer) player,
+                    new ShieldPayload(0)
+            );
+        }
+
+        // ── EARLY CANCEL: not enough charge ──
+        if (elapsed < REQUIRED_CHARGE) {
+            return false;
+        }
 
         float charge = Math.min(1.0f, elapsed / 40.0f);
-        Vec3 hitPos = RaycastTargeting.raycastPosition(player, TARGET_REACH);
-        if (hitPos == null) return false;
+        HitResult hit = RaycastTargeting.raycast(player, TARGET_REACH);
+        if (hit == null) return false;
+
+        Vec3 hitPos = hit.getLocation();
 
         if (!manaPolicy.hasMana(player)) return false;
         if (!cooldownPolicy.canActivate(player, stack)) return false;
@@ -89,7 +116,7 @@ public class LightningStick extends AbstractMagicItem {
         manaPolicy.consume(player);
         cooldownPolicy.applyCooldown(player, stack);
 
-        // 🔥 THIS is now the only effect on release
+        // ── APPLY LIGHTNING EFFECTS ──
         EffectContext ctx = new EffectContext(serverLevel, player, hitPos, charge);
 
         ItemEffects.LIGHTNING_STRIKE.apply(ctx);
@@ -97,17 +124,16 @@ public class LightningStick extends AbstractMagicItem {
         ItemEffects.CHAIN_LIGHTNING.apply(ctx);
         ItemEffects.LIGHTNING_SOUND.apply(ctx);
 
-
-        // Small recoil (kept from old behavior)
+        // recoil
         Vec3 look = player.getLookAngle();
         player.push(-look.x * 0.5, 0.1, -look.z * 0.5);
         player.hurtMarked = true;
 
+        // visuals
         ServerPlayNetworking.send(
                 (ServerPlayer) player,
                 new LightningVisualPayload(hitPos, charge)
         );
-
 
         return true;
     }

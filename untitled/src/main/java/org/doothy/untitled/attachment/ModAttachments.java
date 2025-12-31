@@ -24,6 +24,13 @@ public final class ModAttachments {
                             .copyOnDeath()
                             .initializer(() -> new ManaAttachment(100))
             );
+    public static final AttachmentType<ShieldAttachment> LIGHTNING_SHIELD =
+            AttachmentRegistry.create(
+                    Identifier.fromNamespaceAndPath(MOD_ID, "lightning_shield"),
+                    builder -> builder
+                        .persistent(ShieldAttachment.CODEC)
+                            .initializer(() -> new ShieldAttachment(0))
+                    );
 
     /**
      * Initializes the attachments.

@@ -27,6 +27,7 @@ public class ShockwaveEffect implements ItemEffect {
 
             Vec3 push = e.position().subtract(pos).normalize().scale(0.6 + ctx.charge());
             e.push(push.x, 0.4, push.z);
+            e.setRemainingFireTicks(60);
             e.hurt(level.damageSources().lightningBolt(), damage);
         }
     }

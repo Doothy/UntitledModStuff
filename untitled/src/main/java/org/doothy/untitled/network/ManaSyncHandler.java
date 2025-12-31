@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
 import org.doothy.untitled.api.mana.ManaStorage;
 import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.network.payload.ManaPayload;
 
 /**
  * Helper class for syncing mana data to the client.

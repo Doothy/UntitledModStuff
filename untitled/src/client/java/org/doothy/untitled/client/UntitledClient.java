@@ -12,15 +12,17 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.Untitled;
+import org.doothy.untitled.attachment.ModAttachments;
+import org.doothy.untitled.attachment.ShieldAttachment;
 import org.doothy.untitled.client.screen.ManaFurnaceScreen;
 //import org.doothy.untitled.client.visual.LightningShieldVisual;
 //import org.doothy.untitled.client.visual.LightningVisualHandler;
-import org.doothy.untitled.client.visual.LightningShieldVisual;
-import org.doothy.untitled.client.visual.LightningVisualHandler;
+import org.doothy.untitled.client.visual.*;
 import org.doothy.untitled.items.LightningSoundHelper;
 import org.doothy.untitled.items.LightningStick;
 import org.doothy.untitled.items.ManaBatteryItem;
-import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.network.payload.ManaPayload;
+import org.doothy.untitled.network.payload.ShieldPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 
 /**
@@ -47,6 +49,8 @@ public class UntitledClient implements ClientModInitializer {
         );
         LightningVisualHandler.register();
         LightningShieldVisual.register();
+        ChainLightningVisualHandler.register();
+        LightningChargePreviewHandler.register();
 
         // ───────────────────────── TOOLTIP ─────────────────────────
 
@@ -140,5 +144,26 @@ public class UntitledClient implements ClientModInitializer {
 
             wasCharging = charging;
         });
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.level != null) {
+                LightningTargetPreview.tick(client.level);
+            }
+        });
+        ClientPlayNetworking.registerGlobalReceiver(
+                ShieldPayload.TYPE,
+                (payload, context) -> context.client().execute(() -> {
+                    if (payload.ticks() > 0) {
+                        ClientShieldCache.start();
+                    } else {
+                        ClientShieldCache.stop();
+                    }
+                })
+        );
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            ClientManaCache.reset();
+            ClientShieldCache.reset();
+        });
+
     }
 }

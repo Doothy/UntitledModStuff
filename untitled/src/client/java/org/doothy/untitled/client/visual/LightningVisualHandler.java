@@ -22,6 +22,20 @@ public final class LightningVisualHandler {
 
     }
 
+    private static void spawnStrikeMarker(ClientLevel level, Vec3 pos) {
+        for (int i = 0; i < 12; i++) {
+            double angle = (Math.PI * 2 / 12) * i;
+            level.addParticle(
+                    ParticleTypes.ELECTRIC_SPARK,
+                    pos.x + Math.cos(angle) * 0.4,
+                    pos.y + 0.05,
+                    pos.z + Math.sin(angle) * 0.4,
+                    0, 0.02, 0
+            );
+        }
+    }
+
+
     private static void spawnLightning(Vec3 hitPos, float charge) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
@@ -41,7 +55,7 @@ public final class LightningVisualHandler {
         Vec3 prev = start;
 
         for (int i = 0; i < segments; i++) {
-            float t = (float)i / segments;
+            float t = (float)(i + 1) / segments;
 
             Vec3 next = start.lerp(hitPos, t).add(
                     random.nextGaussian() * 0.2,
@@ -51,6 +65,31 @@ public final class LightningVisualHandler {
 
             spawnArc(level, prev, next);
             prev = next;
+        }
+
+        // Impact visuals — exactly once
+        spawnStrikeMarker(level, hitPos);
+        spawnShockwave(level, hitPos);
+    }
+
+    private static void spawnShockwave(ClientLevel level, Vec3 center) {
+        int rings = 3;
+
+        for (int r = 1; r <= rings; r++) {
+            double radius = r * 0.6;
+
+            for (int i = 0; i < 16; i++) {
+                double angle = (Math.PI * 2 / 16) * i;
+                level.addParticle(
+                        ParticleTypes.CRIT,
+                        center.x + Math.cos(angle) * radius,
+                        center.y + 0.1,
+                        center.z + Math.sin(angle) * radius,
+                        Math.cos(angle) * 0.05,
+                        0.02,
+                        Math.sin(angle) * 0.05
+                );
+            }
         }
     }
 

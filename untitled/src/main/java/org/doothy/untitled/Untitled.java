@@ -1,5 +1,6 @@
 package org.doothy.untitled;
 
+import com.google.common.graph.Network;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -9,6 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -16,17 +18,18 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.component.DataComponentType;
 import com.mojang.serialization.Codec;
+import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.api.mana.ManaStorage;
 import org.doothy.untitled.api.mana.ManaTransaction;
-import org.doothy.untitled.attachment.ManaAttachment;
 import org.doothy.untitled.attachment.ModAttachments;
 import org.doothy.untitled.block.ModBlocks;
 import org.doothy.untitled.block.entity.ModBlockEntities;
 import org.doothy.untitled.effect.ManaRegenEffect;
-import org.doothy.untitled.items.LightningStick;
+import org.doothy.untitled.effects.combat.ShieldDuringChargeEffect;
 import org.doothy.untitled.items.ManaPotionItem;
 import org.doothy.untitled.items.ModItems;
-import org.doothy.untitled.network.ManaPayload;
+import org.doothy.untitled.network.NetworkInit;
+import org.doothy.untitled.network.payload.ManaPayload;
 import org.doothy.untitled.network.ManaSyncHandler;
 import org.doothy.untitled.network.payload.LightningVisualPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
@@ -47,6 +50,8 @@ public class Untitled implements ModInitializer {
             Identifier.fromNamespaceAndPath(MOD_ID, "mana_regen"),
             new ManaRegenEffect(MobEffectCategory.BENEFICIAL, 0x00AAFF)
     );
+    private static final ShieldDuringChargeEffect SHIELD_EFFECT =
+            new ShieldDuringChargeEffect(100, 1.5); // 5s, radius 1.5
 
     // ───────────────────────── DATA COMPONENTS ─────────────────────────
 
@@ -57,6 +62,15 @@ public class Untitled implements ModInitializer {
                     .persistent(Codec.BOOL)
                     .build()
     );
+
+    public static final DataComponentType<Boolean> SHIELD_USED_THIS_USE =
+            Registry.register(
+                    BuiltInRegistries.DATA_COMPONENT_TYPE,
+                    Identifier.fromNamespaceAndPath(MOD_ID, "shield_used_this_use"),
+                    DataComponentType.<Boolean>builder()
+                            .persistent(Codec.BOOL)
+                            .build()
+            );
 
     public static final DataComponentType<Integer> STORED_MANA = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
@@ -80,15 +94,7 @@ public class Untitled implements ModInitializer {
         ModBlocks.initialize();
         ModBlockEntities.initialize();
         ModScreenHandlers.initialize();
-
-        // Networking
-        PayloadTypeRegistry.playS2C().register(ManaPayload.TYPE, ManaPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(
-                LightningVisualPayload.TYPE,
-                LightningVisualPayload.CODEC
-        );
-
-
+        NetworkInit.init();
         // ───────────────────────── SYNC (SAFE TIMING) ─────────────────────────
 
         // Delay sync by 1 server task so attachments exist
@@ -127,5 +133,15 @@ public class Untitled implements ModInitializer {
                 );
             }
         });
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            for (ServerLevel level : server.getAllLevels()) {
+                for (Player player : level.players()) {
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        SHIELD_EFFECT.tick(level, serverPlayer);
+                    }
+                }
+            }
+        });
+
     }
 }

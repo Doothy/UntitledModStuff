@@ -25,7 +25,6 @@ public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> 
                     "textures/gui/mana_furnace.png"
             );
 
-    // Smooth interpolation
     private float visualProgress = 0f;
     private float visualMana = 0f;
 
@@ -119,7 +118,6 @@ public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> 
             int filled = Math.round(visualMana);
             int remaining = 52 - filled;
 
-            // --- Draw full mana bar ---
             guiGraphics.blit(
                     RenderPipelines.GUI_TEXTURED,
                     TEXTURE,
@@ -133,11 +131,9 @@ public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> 
                     256
             );
 
-            // --- Pulse overlay (white with animated alpha) ---
             if (filled > 0) {
                 float pulse = getManaPulse();
 
-                // Alpha between ~40 and ~80 (subtle!)
                 int alpha = (int) (40 + pulse * 40);
                 int color = (alpha << 24) | 0xFFFFFF;
 
@@ -150,7 +146,6 @@ public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> 
                 );
             }
 
-            // --- Mask unfilled part ---
             if (remaining > 0) {
                 guiGraphics.fill(
                         x + 8,
@@ -161,7 +156,6 @@ public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> 
                 );
             }
 
-            // --- Mana frame (no pulse) ---
             guiGraphics.blit(
                     RenderPipelines.GUI_TEXTURED,
                     TEXTURE,
@@ -215,7 +209,7 @@ public class ManaFurnaceScreen extends AbstractContainerScreen<ManaFurnaceMenu> 
         // Speed of pulse (milliseconds)
         double time = System.currentTimeMillis() / 600.0;
 
-        // Sin wave: 0.0 → 1.0 → 0.0
+        // Sin wave
         return 0.5f + 0.5f * (float) Math.sin(time * Math.PI * 2);
     }
 }

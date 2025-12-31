@@ -1,15 +1,14 @@
-package org.doothy.untitled.effects.particle;
+package org.doothy.untitled.client.particle;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import org.doothy.untitled.effects.ClientOnlyEffect;
-import org.doothy.untitled.effects.EffectContext;
 
 @Environment(EnvType.CLIENT)
-public class LightningArcParticleEffect implements ClientOnlyEffect {
+public class LightningArcParticleEffect {
 
     private final Entity from;
     private final Entity to;
@@ -21,8 +20,7 @@ public class LightningArcParticleEffect implements ClientOnlyEffect {
         this.points = points;
     }
 
-    @Override
-    public void applyClient(EffectContext context) {
+    public void spawn(ClientLevel level) {
         Vec3 start = from.position().add(0, from.getBbHeight() * 0.5, 0);
         Vec3 end = to.position().add(0, to.getBbHeight() * 0.5, 0);
 
@@ -30,10 +28,10 @@ public class LightningArcParticleEffect implements ClientOnlyEffect {
             double t = i / (double) points;
             Vec3 pos = start.lerp(end, t);
 
-            context.level().addParticle(
+            level.addParticle(
                     ParticleTypes.ELECTRIC_SPARK,
                     pos.x, pos.y, pos.z,
-                    0, 0, 0
+                    0, 0.01, 0
             );
         }
     }

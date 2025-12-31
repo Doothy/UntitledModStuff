@@ -29,6 +29,7 @@ public class LightningStrikeEffect implements ItemEffect {
                 area,
                 LivingEntity::isAlive
         )) {
+            entity.setRemainingFireTicks(80);
             entity.hurt(level.damageSources().lightningBolt(), DAMAGE);
         }
     }

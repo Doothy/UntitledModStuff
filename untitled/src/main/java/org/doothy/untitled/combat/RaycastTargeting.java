@@ -8,8 +8,13 @@ public final class RaycastTargeting {
 
     private RaycastTargeting() {}
 
-    public static Vec3 raycastPosition(Player player, double reach) {
-        HitResult hit = player.pick(reach, 0.0F, false);
-        return hit.getLocation();
+    public static HitResult raycast(Player player, double reach) {
+        HitResult hit = player.pick(reach, 0.0F, true);
+
+        if (hit.getType() == HitResult.Type.MISS) {
+            return null;
+        }
+
+        return hit;
     }
 }
