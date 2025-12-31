@@ -19,6 +19,9 @@ public final class LightningChargeAudioHandler {
 
     private LightningChargeAudioHandler() {}
 
+    /**
+     * Registers the client tick listener for lightning charge audio.
+     */
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) {

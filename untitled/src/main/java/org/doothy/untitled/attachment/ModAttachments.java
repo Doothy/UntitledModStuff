@@ -27,6 +27,7 @@ public final class ModAttachments {
     /**
      * Attachment storing a temporary lightning shield state (remaining ticks).
      */
+    @SuppressWarnings("UnstableApiUsage")
     public static final AttachmentType<ShieldAttachment> LIGHTNING_SHIELD =
             AttachmentRegistry.create(
                     Identifier.fromNamespaceAndPath(MOD_ID, "lightning_shield"),

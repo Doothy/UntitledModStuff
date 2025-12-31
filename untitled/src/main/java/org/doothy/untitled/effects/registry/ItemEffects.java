@@ -13,15 +13,27 @@ import org.doothy.untitled.sound.ModSounds;
  */
 public final class ItemEffects {
 
+    /**
+     * Effect that summons a lightning strike at the target location.
+     */
     public static final ItemEffect LIGHTNING_STRIKE =
             new LightningStrikeEffect();
 
+    /**
+     * Effect that creates a shockwave, knocking back and damaging entities.
+     */
     public static final ItemEffect LIGHTNING_SHOCKWAVE =
             new ShockwaveEffect();
 
+    /**
+     * Effect that chains lightning between multiple targets.
+     */
     public static final ItemEffect CHAIN_LIGHTNING =
             new ChainLightningEffect();
 
+    /**
+     * Effect that plays a thunder sound at the target location.
+     */
     public static final ItemEffect LIGHTNING_SOUND = ctx ->
             new PositionedSoundEffect(
                     ModSounds.THUNDER_HIT,

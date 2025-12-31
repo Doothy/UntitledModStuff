@@ -19,19 +19,24 @@ public class AttachmentManaCostPolicy implements ManaCostPolicy {
         this.manaCost = manaCost;
     }
 
-    @Override
     /**
      * Checks whether the attached mana storage contains at least the fixed cost.
+     *
+     * @param player player to check
+     * @return true if the player has enough mana
      */
+    @Override
     public boolean hasMana(Player player) {
         ManaStorage mana = player.getAttached(ModAttachments.MANA);
         return mana != null && mana.getMana() >= manaCost;
     }
 
-    @Override
     /**
      * Extracts the fixed cost from the attached mana storage if present.
+     *
+     * @param player player from whom to consume
      */
+    @Override
     public void consume(Player player) {
         ManaStorage mana = player.getAttached(ModAttachments.MANA);
         if (mana == null) return;

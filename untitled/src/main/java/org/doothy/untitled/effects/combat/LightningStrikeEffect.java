@@ -15,13 +15,13 @@ public class LightningStrikeEffect implements ItemEffect {
     private static final float DAMAGE = 8.0f;
     private static final double RADIUS = 3.0;
 
-    @Override
     /**
      * Applies area damage around the hit position using the lightning damage source
      * and ignites affected entities for a short duration.
      *
      * @param ctx effect context containing level and impact position
      */
+    @Override
     public void apply(EffectContext ctx) {
         if (!(ctx.level() instanceof ServerLevel level)) return;
 

@@ -21,6 +21,8 @@ public final class ShieldAttachment {
     /**
      * Creates a new shield attachment with the given remaining ticks.
      * Negative values are clamped to zero.
+     *
+     * @param ticks remaining shield duration in ticks
      */
     public ShieldAttachment(int ticks) {
         this.ticks = Math.max(0, ticks);

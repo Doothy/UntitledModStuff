@@ -8,8 +8,17 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
 import org.doothy.untitled.network.payload.LightningVisualPayload;
 
+/**
+ * Handles the client-side visual effects for lightning strikes.
+ * <p>
+ * This class registers the network receiver for {@link LightningVisualPayload}
+ * and spawns the lightning bolt and impact shockwave particles when the packet is received.
+ */
 public final class LightningVisualHandler {
 
+    /**
+     * Registers the global receiver for lightning visual payloads.
+     */
     public static void register() {
         ClientPlayNetworking.registerGlobalReceiver(
                 LightningVisualPayload.TYPE,

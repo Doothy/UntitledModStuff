@@ -6,10 +6,19 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.doothy.untitled.network.payload.ChainLightningVisualPayload;
 
+/**
+ * Handles the client-side visual effects for chain lightning.
+ * <p>
+ * This class registers the network receiver for {@link ChainLightningVisualPayload}
+ * and spawns the lightning arc particles when the packet is received.
+ */
 public final class ChainLightningVisualHandler {
 
     private ChainLightningVisualHandler() {}
 
+    /**
+     * Registers the global receiver for chain lightning visual payloads.
+     */
     public static void register() {
         ClientPlayNetworking.registerGlobalReceiver(
                 ChainLightningVisualPayload.TYPE,

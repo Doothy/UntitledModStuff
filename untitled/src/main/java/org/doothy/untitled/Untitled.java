@@ -74,11 +74,11 @@ public class Untitled implements ModInitializer {
                     .build()
     );
 
-    @Override
     /**
      * Initializes content and hooks at mod load time. Registers blocks, items, attachments,
      * screens, and networking, then wires player join/respawn sync and server tick handlers.
      */
+    @Override
     public void onInitialize() {
         ModSounds.initialize();
         ModItems.initialize();

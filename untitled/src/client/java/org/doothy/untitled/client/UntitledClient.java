@@ -27,13 +27,13 @@ import net.minecraft.util.Mth;
 public class UntitledClient implements ClientModInitializer {
 
     // Charge sound/preview are handled by dedicated visual handlers
-    @Override
     /**
      * Initializes client listeners and UI components:
      * - Network receivers update client caches and trigger visuals
      * - Tooltip and HUD callbacks render mana information
      * - Screen registration and per-tick tasks for previews and sounds
      */
+    @Override
     public void onInitializeClient() {
         // Register client-side visual/audio handlers
 

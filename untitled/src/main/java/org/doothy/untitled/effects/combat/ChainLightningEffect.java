@@ -23,12 +23,12 @@ import java.util.Set;
  */
 public class ChainLightningEffect implements ItemEffect {
 
-    @Override
     /**
      * Applies sustained, proximity-based chain lightning with strict no-duplicate hits.
      * Target selection is nearest-first within a fixed jump range from the current arc end.
      * Sends a visual payload for each hop.
      */
+    @Override
     public void apply(EffectContext ctx) {
         if (!(ctx.level() instanceof ServerLevel level)) return;
         Player caster = ctx.player();

@@ -39,13 +39,20 @@ public final class ManaAttachment implements ManaStorage {
 
     /**
      * Full constructor used by the codec; clamps negative values and enforces nonzero capacity.
+     *
+     * @param mana     current mana amount
+     * @param capacity maximum mana capacity
      */
     public ManaAttachment(long mana, long capacity) {
         this.capacity = capacity > 0 ? capacity : DEFAULT_CAPACITY;
         this.mana = Math.min(Math.max(0, mana), this.capacity);
     }
 
-    /** Convenience constructor defaulting mana to 0. */
+    /**
+     * Convenience constructor defaulting mana to 0.
+     *
+     * @param capacity maximum mana capacity
+     */
     public ManaAttachment(long capacity) {
         this(0, capacity);
     }

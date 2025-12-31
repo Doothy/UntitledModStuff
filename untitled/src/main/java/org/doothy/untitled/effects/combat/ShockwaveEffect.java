@@ -13,13 +13,13 @@ import org.doothy.untitled.effects.ItemEffect;
  */
 public class ShockwaveEffect implements ItemEffect {
 
-    @Override
     /**
      * Applies the shockwave to all living entities within a vertical slice centered on the hit position.
      * Entities are pushed away, briefly lifted, set on fire, and damaged using a lightning damage source.
      *
      * @param ctx effect context containing world, user, hit position, and normalized charge
      */
+    @Override
     public void apply(EffectContext ctx) {
         ServerLevel level = ctx.level();
         Vec3 pos = ctx.hitPosition();

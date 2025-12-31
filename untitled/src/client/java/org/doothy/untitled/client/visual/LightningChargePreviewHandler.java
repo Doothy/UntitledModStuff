@@ -8,10 +8,20 @@ import net.minecraft.world.phys.HitResult;
 import org.doothy.untitled.combat.RaycastTargeting;
 import org.doothy.untitled.items.LightningStick;
 
+/**
+ * Handles the client-side preview of the lightning strike target while charging.
+ * <p>
+ * This class registers a client tick listener that checks if the player is charging
+ * the {@link LightningStick} and updates the {@link LightningTargetPreview} with the
+ * current target position.
+ */
 public final class LightningChargePreviewHandler {
 
     private LightningChargePreviewHandler() {}
 
+    /**
+     * Registers the client tick listener for lightning charge preview.
+     */
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ClientLevel level = client.level;

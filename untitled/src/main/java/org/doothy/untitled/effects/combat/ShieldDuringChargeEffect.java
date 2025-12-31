@@ -36,7 +36,6 @@ public class ShieldDuringChargeEffect implements ChargeTickEffect {
         this.radius = radius;
     }
 
-    @Override
     /**
      * On each charge tick, attempts to activate the shield once per use. The shield state
      * is stored on a player attachment and mirrored to the client via a payload.
@@ -46,6 +45,7 @@ public class ShieldDuringChargeEffect implements ChargeTickEffect {
      * @param stack    item stack being used
      * @param elapsed  ticks elapsed since use started
      */
+    @Override
     public void onChargeTick(Level level, LivingEntity user, ItemStack stack, int elapsed) {
         if (!(level instanceof ServerLevel)) return;
         if (!(user instanceof ServerPlayer player)) return;

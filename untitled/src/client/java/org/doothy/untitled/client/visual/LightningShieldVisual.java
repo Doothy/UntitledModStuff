@@ -8,10 +8,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.doothy.untitled.client.ClientShieldCache;
 
+/**
+ * Handles the visual effects for the lightning shield.
+ * <p>
+ * This class registers a client tick listener that spawns particles around the player
+ * when the shield is active, creating a rotating electric barrier effect.
+ */
 public final class LightningShieldVisual {
 
     private LightningShieldVisual() {}
 
+    /**
+     * Registers the client tick listener for shield visuals.
+     */
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick());
     }

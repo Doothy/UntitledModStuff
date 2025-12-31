@@ -19,10 +19,13 @@ public class PercentManaCostPolicy implements ManaCostPolicy {
         this.percent = percent;
     }
 
-    @Override
     /**
      * Checks whether the attached mana storage has at least the computed percent cost.
+     *
+     * @param player player to check
+     * @return true if the player has enough mana
      */
+    @Override
     public boolean hasMana(Player player) {
         ManaStorage mana = player.getAttached(ModAttachments.MANA);
         if (mana == null) return false;
@@ -31,10 +34,12 @@ public class PercentManaCostPolicy implements ManaCostPolicy {
         return mana.getMana() >= cost;
     }
 
-    @Override
     /**
      * Consumes the computed percentage of max mana from the attached storage.
+     *
+     * @param player player from whom to consume
      */
+    @Override
     public void consume(Player player) {
         ManaStorage mana = player.getAttached(ModAttachments.MANA);
         if (mana == null) return;
