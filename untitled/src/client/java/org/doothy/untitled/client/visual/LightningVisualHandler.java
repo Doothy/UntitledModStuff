@@ -3,8 +3,8 @@ package org.doothy.untitled.client.visual;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import org.doothy.untitled.network.payload.LightningVisualPayload;
 
@@ -22,63 +22,57 @@ public final class LightningVisualHandler {
 
     }
 
-    private static void spawnStrikeMarker(ClientLevel level, Vec3 pos) {
-        for (int i = 0; i < 12; i++) {
-            double angle = (Math.PI * 2 / 12) * i;
-            level.addParticle(
-                    ParticleTypes.ELECTRIC_SPARK,
-                    pos.x + Math.cos(angle) * 0.4,
-                    pos.y + 0.05,
-                    pos.z + Math.sin(angle) * 0.4,
-                    0, 0.02, 0
-            );
-        }
-    }
-
-
     private static void spawnLightning(Vec3 hitPos, float charge) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) return;
 
-        RandomSource random = level.random;
-        double height = 12 + charge * 10; // keep a dramatic skyward endpoint
+        // Logic from ParticleHelper.spawnDramaticBolt
+        double curX = hitPos.x;
+        double curZ = hitPos.z;
+        java.util.Random random = new java.util.Random();
+        ColorParticleOption flashWhite = ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFFFFF);
 
-        // Per request: make the arc start at the target position and reach upward into the sky
-        Vec3 start = hitPos;
-        Vec3 end = hitPos.add(
-                random.nextGaussian() * 0.3,
-                height,
-                random.nextGaussian() * 0.3
-        );
-
-        LightningArc.spawnBezierArc(level, start, end, 0.15, 10.0, 250);
+        // sky-to-ground vertical effect with mild horizontal wander
+        for (double y = hitPos.y; y < hitPos.y + 55; y += 0.6) {
+            curX += (random.nextDouble() - 0.5) * 0.6;
+            curZ += (random.nextDouble() - 0.5) * 0.6;
+            level.addParticle(flashWhite, curX, y, curZ, 0, 0, 0);
+        }
 
         // Impact visuals — exactly once
-        spawnStrikeMarker(level, hitPos);
         spawnShockwave(level, hitPos);
     }
 
-    private static void spawnShockwave(ClientLevel level, Vec3 center) {
-        int rings = 3;
+    private static void spawnShockwave(ClientLevel level, Vec3 pos) {
+        // core blast at impact
+        level.addParticle(ParticleTypes.EXPLOSION_EMITTER,
+                pos.x, pos.y, pos.z,
+                0, 0, 0);
 
-        for (int r = 1; r <= rings; r++) {
-            double radius = r * 0.6;
+        // vertical sonic distortion above the center
+        level.addParticle(ParticleTypes.SONIC_BOOM,
+                pos.x, pos.y + 1.2, pos.z,
+                0, 0, 0);
 
-            for (int i = 0; i < 16; i++) {
-                double angle = (Math.PI * 2 / 16) * i;
-                level.addParticle(
-                        ParticleTypes.CRIT,
-                        center.x + Math.cos(angle) * radius,
-                        center.y + 0.1,
-                        center.z + Math.sin(angle) * radius,
-                        Math.cos(angle) * 0.05,
-                        0.02,
-                        Math.sin(angle) * 0.05
-                );
-            }
+        // expanding ground ring composed of two particle layers
+        int particleCount = 40;
+        double speed = 0.6;
+
+        for (int i = 0; i < particleCount; i++) {
+            double angle = (Math.PI * 2 * i) / particleCount;
+            double dx = Math.cos(angle);
+            double dz = Math.sin(angle);
+
+            // layer A: dust wave
+            level.addParticle(ParticleTypes.CLOUD,
+                    pos.x, pos.y + 0.1, pos.z,
+                    dx * speed, 0, dz * speed);
+
+            // layer B: electric edge
+            level.addParticle(ParticleTypes.END_ROD,
+                    pos.x, pos.y + 0.1, pos.z,
+                    dx * speed * 1.2, 0, dz * speed * 1.2);
         }
     }
-
-    // straight-segment helper removed in favor of Bezier-based LightningArc
 }

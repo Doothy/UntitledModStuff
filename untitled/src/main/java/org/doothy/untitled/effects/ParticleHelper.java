@@ -11,19 +11,6 @@ import net.minecraft.world.phys.Vec3;
  * Helper class for spawning particle effects.
  */
 public class ParticleHelper {
-
-    /**
-     * Spawns sparks at the target point so the player knows where the bolt will land.
-     *
-     * @param level    The server level.
-     * @param position The target position.
-     */
-    public static void spawnTargetingSparks(ServerLevel level, Vec3 position) {
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                position.x, position.y + 0.1, position.z,
-                3, 0.2, 0.1, 0.2, 0.05);
-    }
-
     /**
      * Renders the Repel Zone Ring for the shield.
      *
