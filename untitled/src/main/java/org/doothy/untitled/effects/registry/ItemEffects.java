@@ -8,6 +8,9 @@ import org.doothy.untitled.effects.combat.ShockwaveEffect;
 import org.doothy.untitled.effects.sound.PositionedSoundEffect;
 import org.doothy.untitled.sound.ModSounds;
 
+/**
+ * Central registry of item effects used by magic items.
+ */
 public final class ItemEffects {
 
     public static final ItemEffect LIGHTNING_STRIKE =

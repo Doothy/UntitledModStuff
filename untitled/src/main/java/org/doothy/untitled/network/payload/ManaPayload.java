@@ -9,28 +9,17 @@ import org.doothy.untitled.Untitled;
 import org.jspecify.annotations.NonNull;
 
 /**
- * Server → Client payload for syncing mana state.
- * <p>
- * This payload is PURE DATA.
- * It does not reference attachments, storage implementations, or gameplay logic.
+ * Server-to-client payload carrying the player's current mana and capacity for HUD updates.
  *
- * @param mana     Current mana amount
- * @param capacity Maximum mana capacity
+ * @param mana     current mana amount
+ * @param capacity maximum mana capacity
  */
 public record ManaPayload(int mana, int capacity) implements CustomPacketPayload {
 
-    /** Packet identifier */
     public static final Type<ManaPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "mana"));
 
-    /**
-     * Stream codec (MC 1.21.11+).
-     * <p>
-     * Uses VAR_INT because:
-     * - HUD-scale values
-     * - Compact over the wire
-     * - Internal storage may still use long
-     */
+    /** Stream codec using VAR_INT for compact HUD-scale values. */
     public static final StreamCodec<RegistryFriendlyByteBuf, ManaPayload> CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.VAR_INT, ManaPayload::mana,

@@ -7,12 +7,21 @@ import net.minecraft.world.phys.Vec3;
 import org.doothy.untitled.effects.EffectContext;
 import org.doothy.untitled.effects.ItemEffect;
 
+/**
+ * Deals a burst of lightning damage and applies fire to entities near the impact point.
+ */
 public class LightningStrikeEffect implements ItemEffect {
 
     private static final float DAMAGE = 8.0f;
     private static final double RADIUS = 3.0;
 
     @Override
+    /**
+     * Applies area damage around the hit position using the lightning damage source
+     * and ignites affected entities for a short duration.
+     *
+     * @param ctx effect context containing level and impact position
+     */
     public void apply(EffectContext ctx) {
         if (!(ctx.level() instanceof ServerLevel level)) return;
 

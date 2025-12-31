@@ -15,8 +15,6 @@ import org.doothy.untitled.Untitled;
 import org.doothy.untitled.attachment.ModAttachments;
 import org.doothy.untitled.attachment.ShieldAttachment;
 import org.doothy.untitled.client.screen.ManaFurnaceScreen;
-//import org.doothy.untitled.client.visual.LightningShieldVisual;
-//import org.doothy.untitled.client.visual.LightningVisualHandler;
 import org.doothy.untitled.client.visual.*;
 import org.doothy.untitled.items.LightningSoundHelper;
 import org.doothy.untitled.items.LightningStick;
@@ -26,8 +24,8 @@ import org.doothy.untitled.network.payload.ShieldPayload;
 import org.doothy.untitled.screen.ModScreenHandlers;
 
 /**
- * The client-side entry point for the mod.
- * Handles client initialization, rendering, and input.
+ * Client-side entry point that wires client networking listeners, HUD rendering,
+ * screens, and simple client-side caches.
  */
 public class UntitledClient implements ClientModInitializer {
 
@@ -35,11 +33,14 @@ public class UntitledClient implements ClientModInitializer {
 
     private static int chargeTicks = 0;
     @Override
+    /**
+     * Initializes client listeners and UI components:
+     * - Network receivers update client caches and trigger visuals
+     * - Tooltip and HUD callbacks render mana information
+     * - Screen registration and per-tick tasks for previews and sounds
+     */
     public void onInitializeClient() {
-
         LightningSoundHelper.Holder.INSTANCE = new ClientLightningSoundHelper();
-
-        // ───────────────────────── NETWORKING ─────────────────────────
 
         ClientPlayNetworking.registerGlobalReceiver(
                 ManaPayload.TYPE,
@@ -51,8 +52,6 @@ public class UntitledClient implements ClientModInitializer {
         LightningShieldVisual.register();
         ChainLightningVisualHandler.register();
         LightningChargePreviewHandler.register();
-
-        // ───────────────────────── TOOLTIP ─────────────────────────
 
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
             if (stack.getItem() instanceof ManaBatteryItem battery) {
@@ -69,8 +68,6 @@ public class UntitledClient implements ClientModInitializer {
                 );
             }
         });
-
-        // ───────────────────────── HUD ─────────────────────────
 
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             Minecraft client = Minecraft.getInstance();
@@ -105,14 +102,10 @@ public class UntitledClient implements ClientModInitializer {
             );
         });
 
-        // ───────────────────────── SCREENS ─────────────────────────
-
         MenuScreens.register(
                 ModScreenHandlers.MANA_FURNACE_MENU,
                 ManaFurnaceScreen::new
         );
-
-        // ───────────────────────── RESET CACHE ─────────────────────────
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientManaCache.reset());
 
@@ -124,19 +117,16 @@ public class UntitledClient implements ClientModInitializer {
             boolean charging =
                     player.isUsingItem() &&
                             player.getUseItem().getItem() instanceof LightningStick;
-
-            // ─── charge started ───
+            // Start charging: begin charge sound and reset counter
             if (charging && !wasCharging) {
                 chargeTicks = 0;
                 LightningSoundHelper.Holder.INSTANCE.start();
             }
-
-            // ─── charge ongoing ───
+            // While charging: increment local counter
             if (charging) {
                 chargeTicks++;
             }
-
-            // ─── charge cancelled before completion ───
+            // Cancelled before completion: stop sound and reset
             if (!charging && wasCharging) {
                 LightningSoundHelper.Holder.INSTANCE.stop();
                 chargeTicks = 0;

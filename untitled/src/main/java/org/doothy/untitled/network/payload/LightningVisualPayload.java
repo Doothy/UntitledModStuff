@@ -7,9 +7,17 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.doothy.untitled.Untitled;
 
+/**
+ * Server-to-client payload instructing the client to render a lightning impact visual
+ * at the given world position with a normalized charge factor.
+ *
+ * @param pos    world position of the visual
+ * @param charge normalized charge in [0..1]
+ */
 public record LightningVisualPayload(Vec3 pos, float charge)
         implements CustomPacketPayload {
 
+    /** Packet type identifier for Fabric networking. */
     public static final CustomPacketPayload.Type<LightningVisualPayload> TYPE =
             new CustomPacketPayload.Type<>(
                     Identifier.fromNamespaceAndPath(
@@ -17,6 +25,7 @@ public record LightningVisualPayload(Vec3 pos, float charge)
                     )
             );
 
+    /** Stream codec encoding the hit position (x,y,z) followed by the charge float. */
     public static final StreamCodec<RegistryFriendlyByteBuf, LightningVisualPayload> CODEC =
             StreamCodec.of(
                     LightningVisualPayload::write,

@@ -16,17 +16,36 @@ import org.doothy.untitled.effects.ChargeTickEffect;
 import org.doothy.untitled.network.payload.ShieldPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
+/**
+ * Applies a short-lived protective aura when the user charges an ability.
+ * While active, the shield pushes nearby entities away and deals minor periodic damage.
+ */
 public class ShieldDuringChargeEffect implements ChargeTickEffect {
 
     private final int durationTicks;
     private final double radius;
 
+    /**
+     * Creates a new shield effect that persists for a fixed duration and radius.
+     *
+     * @param durationTicks total active ticks for the shield after being applied
+     * @param radius        horizontal radius used to affect nearby entities
+     */
     public ShieldDuringChargeEffect(int durationTicks, double radius) {
         this.durationTicks = durationTicks;
         this.radius = radius;
     }
 
     @Override
+    /**
+     * On each charge tick, attempts to activate the shield once per use. The shield state
+     * is stored on a player attachment and mirrored to the client via a payload.
+     *
+     * @param level    current level (server-side required)
+     * @param user     living entity charging the item
+     * @param stack    item stack being used
+     * @param elapsed  ticks elapsed since use started
+     */
     public void onChargeTick(Level level, LivingEntity user, ItemStack stack, int elapsed) {
         if (!(level instanceof ServerLevel)) return;
         if (!(user instanceof ServerPlayer player)) return;
@@ -40,14 +59,20 @@ public class ShieldDuringChargeEffect implements ChargeTickEffect {
         stack.set(Untitled.SHIELD_USED_THIS_USE, true);
 
         shield.setTicks(durationTicks);
-
-        // 🔁 SYNC TO CLIENT (start)
+        // Notify client about shield activation with its remaining duration
         ServerPlayNetworking.send(
                 player,
                 new ShieldPayload(durationTicks)
         );
     }
 
+    /**
+     * Per-tick maintenance for an active shield: decrements duration, plays a sound when
+     * it ends, syncs termination to client, and applies knockback/damage to nearby entities.
+     *
+     * @param level  server level containing the player
+     * @param player player that currently has a shield attachment
+     */
     public void tick(ServerLevel level, ServerPlayer player) {
         ShieldAttachment shield =
                 player.getAttachedOrCreate(ModAttachments.LIGHTNING_SHIELD);
@@ -67,8 +92,7 @@ public class ShieldDuringChargeEffect implements ChargeTickEffect {
                     1.0f,
                     1.0f
             );
-
-            // 🔁 SYNC TO CLIENT (stop)
+            // Notify client that the shield has ended
             ServerPlayNetworking.send(
                     player,
                     new ShieldPayload(0)
@@ -82,6 +106,7 @@ public class ShieldDuringChargeEffect implements ChargeTickEffect {
                 area,
                 e -> e != player && e.isAlive()
         )) {
+            // Compute a horizontal push vector away from the player and apply gentle lift
             Vec3 push = enemy.position()
                     .subtract(player.position())
                     .normalize()

@@ -5,15 +5,24 @@ import org.doothy.untitled.api.mana.ManaStorage;
 import org.doothy.untitled.api.mana.ManaTransaction;
 import org.doothy.untitled.attachment.ModAttachments;
 
+/**
+ * Mana cost policy that charges a percentage of the player's maximum mana.
+ */
 public class PercentManaCostPolicy implements ManaCostPolicy {
 
-    private final double percent; // 0.0 – 1.0
+    private final double percent;
 
+    /**
+     * @param percent fraction in [0.0, 1.0] of max mana to charge
+     */
     public PercentManaCostPolicy(double percent) {
         this.percent = percent;
     }
 
     @Override
+    /**
+     * Checks whether the attached mana storage has at least the computed percent cost.
+     */
     public boolean hasMana(Player player) {
         ManaStorage mana = player.getAttached(ModAttachments.MANA);
         if (mana == null) return false;
@@ -23,6 +32,9 @@ public class PercentManaCostPolicy implements ManaCostPolicy {
     }
 
     @Override
+    /**
+     * Consumes the computed percentage of max mana from the attached storage.
+     */
     public void consume(Player player) {
         ManaStorage mana = player.getAttached(ModAttachments.MANA);
         if (mana == null) return;

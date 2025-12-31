@@ -7,9 +7,19 @@ import net.minecraft.world.phys.Vec3;
 import org.doothy.untitled.effects.EffectContext;
 import org.doothy.untitled.effects.ItemEffect;
 
+/**
+ * Emits a radial knockback and damage burst around the impact position,
+ * scaling both radius and damage with the charge value.
+ */
 public class ShockwaveEffect implements ItemEffect {
 
     @Override
+    /**
+     * Applies the shockwave to all living entities within a vertical slice centered on the hit position.
+     * Entities are pushed away, briefly lifted, set on fire, and damaged using a lightning damage source.
+     *
+     * @param ctx effect context containing world, user, hit position, and normalized charge
+     */
     public void apply(EffectContext ctx) {
         ServerLevel level = ctx.level();
         Vec3 pos = ctx.hitPosition();
@@ -24,7 +34,7 @@ public class ShockwaveEffect implements ItemEffect {
 
         for (LivingEntity e : level.getEntitiesOfClass(
                 LivingEntity.class, area, LivingEntity::isAlive)) {
-
+            // Push entities outward from the impact center; scale strength with charge
             Vec3 push = e.position().subtract(pos).normalize().scale(0.6 + ctx.charge());
             e.push(push.x, 0.4, push.z);
             e.setRemainingFireTicks(60);

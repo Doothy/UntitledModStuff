@@ -36,14 +36,12 @@ import org.doothy.untitled.screen.ModScreenHandlers;
 import org.doothy.untitled.sound.ModSounds;
 
 /**
- * The main entry point for the mod.
- * Handles initialization of content, networking, and event listeners.
+ * Mod entry point that registers content, networking payloads, data components,
+ * and lifecycle listeners for player sync, mana regeneration, and shield ticking.
  */
 public class Untitled implements ModInitializer {
 
     public static final String MOD_ID = "untitled";
-
-    // ───────────────────────── EFFECTS ─────────────────────────
 
     public static final Holder<MobEffect> MANA_REGEN = Registry.registerForHolder(
             BuiltInRegistries.MOB_EFFECT,
@@ -51,9 +49,7 @@ public class Untitled implements ModInitializer {
             new ManaRegenEffect(MobEffectCategory.BENEFICIAL, 0x00AAFF)
     );
     private static final ShieldDuringChargeEffect SHIELD_EFFECT =
-            new ShieldDuringChargeEffect(100, 1.5); // 5s, radius 1.5
-
-    // ───────────────────────── DATA COMPONENTS ─────────────────────────
+            new ShieldDuringChargeEffect(100, 1.5);
 
     public static final DataComponentType<Boolean> WAS_ON_COOLDOWN = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
@@ -81,12 +77,12 @@ public class Untitled implements ModInitializer {
                     .build()
     );
 
-    // ───────────────────────── INITIALIZATION ─────────────────────────
-
     @Override
+    /**
+     * Initializes content and hooks at mod load time. Registers blocks, items, attachments,
+     * screens, and networking, then wires player join/respawn sync and server tick handlers.
+     */
     public void onInitialize() {
-
-        // Content
         ModSounds.initialize();
         ModItems.initialize();
         ModAttachments.initialize();
@@ -95,9 +91,7 @@ public class Untitled implements ModInitializer {
         ModBlockEntities.initialize();
         ModScreenHandlers.initialize();
         NetworkInit.init();
-        // ───────────────────────── SYNC (SAFE TIMING) ─────────────────────────
-
-        // Delay sync by 1 server task so attachments exist
+        // Delay mana sync by one server task to ensure attachments exist
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             server.execute(() -> {
                 ServerPlayer player = handler.player;
@@ -105,14 +99,11 @@ public class Untitled implements ModInitializer {
                 ManaSyncHandler.sync(player);
             });
         });
-
-        // Sync on respawn / dimension copy
+        // Resync on respawn / dimension copy
         ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
             ManaSyncHandler.sync(newPlayer);
         });
-
-        // ───────────────────────── MANA REGEN + SYNC ─────────────────────────
-
+        // Every second, regenerate mana server-side and push updated values to clients
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.getTickCount() % 20 != 0) return;
 
@@ -133,6 +124,7 @@ public class Untitled implements ModInitializer {
                 );
             }
         });
+        // Per-tick shield upkeep for all players across all levels
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (ServerLevel level : server.getAllLevels()) {
                 for (Player player : level.players()) {

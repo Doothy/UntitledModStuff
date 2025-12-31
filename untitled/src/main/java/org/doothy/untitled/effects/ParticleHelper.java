@@ -35,15 +35,17 @@ public class ParticleHelper {
         double radius = 2.0;
         double particleCount = 10;
         double increment = 2 * Math.PI / particleCount;
-        double offset = (ticksUsed * 0.1); // Spin animation
+        double offset = (ticksUsed * 0.1); // rotation phase offset
 
         for (int i = 0; i < particleCount; i++) {
             double angle = (i * increment) + offset;
             double px = player.getX() + (Math.cos(angle) * radius);
             double pz = player.getZ() + (Math.sin(angle) * radius);
 
-            // Count 0 sends particle to specific coords without velocity spread
-            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, px, player.getY(), pz, 0, 0, 0, 0, 0);
+            // zero count => spawn positioned particle (no spread)
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    px, player.getY(), pz,
+                    0, 0, 0, 0, 0);
         }
     }
 
@@ -87,24 +89,19 @@ public class ParticleHelper {
     public static void spawnChainLightningLink(ServerLevel level, Vec3 start, Vec3 end) {
         double distance = start.distanceTo(end);
 
-        // 1. Calculate the Control Point (The peak of the arc)
         Vec3 midPoint = start.add(end).scale(0.5);
-        // Height factor 0.6, might fiddle around with this number
+        // control point above midpoint to produce an arced path
         double arcHeight = Math.min(distance * 0.6, 8.0);
         Vec3 controlPoint = midPoint.add(0, arcHeight, 0);
 
-        // 2. Determine density
-        // 10 particles per block distance ensures a solid looking beam
+        // particle density proportional to distance
         int particleCount = (int) (distance * 10);
 
         java.util.Random random = new java.util.Random();
 
-        // 3. Interpolate along the curve
         for (int i = 0; i <= particleCount; i++) {
             double t = (double) i / particleCount;
-
-            // --- THE BEZIER MATH ---
-            // Formula: P = (1-t)^2 * A + 2(1-t)t * C + t^2 * B
+            // quadratic Bezier interpolation
             double aCoeff = Math.pow(1 - t, 2);
             double cCoeff = 2 * (1 - t) * t;
             double bCoeff = Math.pow(t, 2);
@@ -113,8 +110,7 @@ public class ParticleHelper {
             double y = (aCoeff * start.y) + (cCoeff * controlPoint.y) + (bCoeff * end.y);
             double z = (aCoeff * start.z) + (cCoeff * controlPoint.z) + (bCoeff * end.z);
 
-            // 4. Add Electric Jitter
-            // We apply jitter to BOTH particles so they line up
+            // apply small random jitter for an energetic look
             if (i > 0 && i < particleCount) {
                 double chaos = 0.15;
                 double jX = (random.nextDouble() - 0.5) * chaos;
@@ -123,17 +119,14 @@ public class ParticleHelper {
                 x += jX; y += jY; z += jZ;
             }
 
-            // 5. Spawn Particles
+            // instant spark at sample point
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    x, y, z,
+                    1, 0, 0, 0, 0);
 
-            // A. The Fizzle (instant)
-            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y, z, 1, 0, 0, 0, 0);
-
-            // B. The After-Image (Persists ~1 second)
-            // We only spawn this every 2nd step to keep the bolt from looking too "thick"
+            // lingering after-image every other step (END_ROD)
             if (i % 2 == 0) {
-                level.sendParticles(ParticleTypes.END_ROD,
-                        x, y, z,
-                        1, 0, 0, 0, 0); // Speed 0 keeps it locked in place
+                level.sendParticles(ParticleTypes.END_ROD, x, y, z, 1, 0, 0, 0, 0);
             }
         }
     }
@@ -150,7 +143,7 @@ public class ParticleHelper {
         java.util.Random random = new java.util.Random();
         ColorParticleOption flashWhite = ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFFFFF);
 
-        // Sky-to-ground vertical effect
+        // sky-to-ground vertical effect with mild horizontal wander
         for (double y = pos.y; y < pos.y + 55; y += 0.6) {
             curX += (random.nextDouble() - 0.5) * 0.6;
             curZ += (random.nextDouble() - 0.5) * 0.6;
@@ -166,17 +159,17 @@ public class ParticleHelper {
      * @param pos   The center of the shockwave.
      */
     public static void spawnShockwave(ServerLevel level, Vec3 pos) {
-        // 1. The Core Blast (Explosion)
+        // core blast at impact
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
                 pos.x, pos.y, pos.z,
                 1, 0, 0, 0, 0);
 
-        // 2. The Vertical Sonic Distortion
+        // vertical sonic distortion above the center
         level.sendParticles(ParticleTypes.SONIC_BOOM,
                 pos.x, pos.y + 1.2, pos.z,
                 1, 0, 0, 0, 0);
 
-        // 3. The "Pressure Wave" (Expanding Ground Circle)
+        // expanding ground ring composed of two particle layers
         int particleCount = 40;
         double speed = 0.6;
 
@@ -185,12 +178,12 @@ public class ParticleHelper {
             double dx = Math.cos(angle);
             double dz = Math.sin(angle);
 
-            // LAYER A: The "Dust" Wave
+            // layer A: dust wave
             level.sendParticles(ParticleTypes.CLOUD,
                     pos.x, pos.y + 0.1, pos.z,
                     0, dx, 0, dz, speed);
 
-            // LAYER B: The "Electric" Edge
+            // layer B: electric edge
             level.sendParticles(ParticleTypes.END_ROD,
                     pos.x, pos.y + 0.1, pos.z,
                     0, dx, 0, dz, speed * 1.2);

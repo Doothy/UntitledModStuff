@@ -7,13 +7,12 @@ import net.minecraft.resources.Identifier;
 import static org.doothy.untitled.Untitled.MOD_ID;
 
 /**
- * Registry class for all custom attachments in the mod.
+ * Declares and registers all custom attachments used by the mod.
  */
 public final class ModAttachments {
 
     /**
-     * The Mana attachment.
-     * Stores mana on entities (like players).
+     * Attachment storing per-entity mana state (e.g., for players).
      */
     @SuppressWarnings("UnstableApiUsage")
     public static final AttachmentType<ManaAttachment> MANA =
@@ -24,16 +23,20 @@ public final class ModAttachments {
                             .copyOnDeath()
                             .initializer(() -> new ManaAttachment(100))
             );
+
+    /**
+     * Attachment storing a temporary lightning shield state (remaining ticks).
+     */
     public static final AttachmentType<ShieldAttachment> LIGHTNING_SHIELD =
             AttachmentRegistry.create(
                     Identifier.fromNamespaceAndPath(MOD_ID, "lightning_shield"),
                     builder -> builder
-                        .persistent(ShieldAttachment.CODEC)
+                            .persistent(ShieldAttachment.CODEC)
                             .initializer(() -> new ShieldAttachment(0))
-                    );
+            );
 
     /**
-     * Initializes the attachments.
+     * No-op initializer; present for symmetry with other registries.
      */
     public static void initialize() {}
 

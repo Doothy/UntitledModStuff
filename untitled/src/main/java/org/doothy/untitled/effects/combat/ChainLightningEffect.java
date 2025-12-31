@@ -14,9 +14,19 @@ import org.doothy.untitled.network.payload.ChainLightningVisualPayload;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Jumps lightning damage from the initial impact to nearby living entities,
+ * up to a maximum number of chained targets based on charge.
+ */
 public class ChainLightningEffect implements ItemEffect {
 
     @Override
+    /**
+     * Applies the chain lightning effect from the impact point to successive nearby targets,
+     * sending a visual packet for each hop.
+     *
+     * @param ctx effect context containing level, player, hit position, and charge
+     */
     public void apply(EffectContext ctx) {
         ServerLevel level = ctx.level();
         Player caster = ctx.player();
@@ -29,7 +39,7 @@ public class ChainLightningEffect implements ItemEffect {
         float damage = 4.0f + charge * 4.0f;
         int maxChains = 3 + (int)(charge * 3);
 
-        // ── Find initial target near hit position ──
+        // select first valid target near impact point
         AABB initialArea = new AABB(
                 origin.x - radius, origin.y - radius, origin.z - radius,
                 origin.x + radius, origin.y + radius, origin.z + radius
@@ -46,7 +56,7 @@ public class ChainLightningEffect implements ItemEffect {
         Set<LivingEntity> hit = new HashSet<>();
         hit.add(current);
 
-        // ── Chain ──
+        // iterate chain hops until limit or no candidates remain
         for (int i = 0; i < maxChains; i++) {
 
             AABB chainArea = current.getBoundingBox().inflate(radius);
@@ -59,10 +69,10 @@ public class ChainLightningEffect implements ItemEffect {
 
             if (next == null) break;
 
-            // Damage
+            // apply damage to next link
             next.hurt(level.damageSources().lightningBolt(), damage);
 
-            // 🔹 SEND VISUAL PACKET (per hop)
+            // broadcast hop visual to nearby players for this link
             ChainLightningVisualPayload payload =
                     new ChainLightningVisualPayload(current.getId(), next.getId());
 
