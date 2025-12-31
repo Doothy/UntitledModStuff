@@ -1,4 +1,4 @@
-package org.doothy.untitled.network;
+package org.doothy.untitled.network.payload;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
