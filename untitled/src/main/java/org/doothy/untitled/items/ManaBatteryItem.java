@@ -111,7 +111,7 @@ public class ManaBatteryItem extends Item {
 
     @Override
     public ItemUseAnimation getUseAnimation(ItemStack stack) {
-        return ItemUseAnimation.BOW;
+        return ItemUseAnimation.BLOCK;
     }
 
     // ───────────────────────── VISUALS ─────────────────────────
