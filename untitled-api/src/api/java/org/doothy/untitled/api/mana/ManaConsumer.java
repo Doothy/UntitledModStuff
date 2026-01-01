@@ -1,13 +1,27 @@
 package org.doothy.untitled.api.mana;
 
-/**
- * Represents an object that consumes Mana.
- */
 public interface ManaConsumer {
+
     /**
-     * Retrieves the mana storage used for input.
-     *
-     * @return the input {@link ManaStorage}.
+     * Maximum mana this consumer wants per tick.
      */
-    ManaStorage getManaInput();
+    int getRequestedManaPerTick();
+
+    /**
+     * Called once per tick by the mana system.
+     */
+    void acceptMana(int amount);
+
+    /**
+     * Whether this consumer has a local buffer.
+     */
+    default boolean hasBuffer() {
+        return true;
+    }
+
+    /**
+     * Local buffer for network-delivered mana.
+     * Must NOT be network-visible.
+     */
+    ManaStorage getBuffer();
 }

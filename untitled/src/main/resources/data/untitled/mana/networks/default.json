@@ -1,0 +1,5 @@
+{
+  "max_consumers_per_tick": 64,
+  "fairness": "weighted",
+  "remainder_policy": "stable"
+}

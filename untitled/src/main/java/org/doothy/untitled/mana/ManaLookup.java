@@ -29,10 +29,6 @@ public final class ManaLookup {
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null) return Optional.empty();
 
-        if (be instanceof ManaConsumer consumer) {
-            return Optional.ofNullable(consumer.getManaInput());
-        }
-
         if (be instanceof ManaProducer producer) {
             return Optional.ofNullable(producer.getManaOutput());
         }
