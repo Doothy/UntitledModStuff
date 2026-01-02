@@ -21,6 +21,12 @@ public class ModBlockEntities {
             FabricBlockEntityTypeBuilder.create(ManaFurnaceBlockEntity::new, ModBlocks.MANA_FURNACE).build()
     );
 
+    public static final BlockEntityType<ManaBatteryBlockEntity> MANA_BATTERY_BE = Registry.register(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE,
+            Identifier.fromNamespaceAndPath(Untitled.MOD_ID, "mana_battery_be"),
+            FabricBlockEntityTypeBuilder.create(ManaBatteryBlockEntity::new, ModBlocks.MANA_BATTERY_BLOCK).build()
+    );
+
     /**
      * Initializes the block entities.
      */

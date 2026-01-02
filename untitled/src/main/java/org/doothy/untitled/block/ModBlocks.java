@@ -32,6 +32,14 @@ public class ModBlocks {
                     .lightLevel(state -> state.getValue(ManaFurnaceBlock.LIT) ? 13 : 0)
             ));
 
+    public static final Block MANA_BATTERY_BLOCK = register("mana_battery_block", key ->
+            new ManaBatteryBlock(BlockBehaviour.Properties.of()
+                    .setId(key)
+                    .mapColor(MapColor.STONE)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.5f)
+            ));
+
     /**
      * Registers a block and its corresponding item.
      *

@@ -1,0 +1,5 @@
+{
+  "buffer_capacity": 4000,
+  "consume_per_tick": 20,
+  "max_receive_per_tick": 80
+}

@@ -26,6 +26,7 @@ import org.doothy.untitled.effect.ManaRegenEffect;
 import org.doothy.untitled.effects.combat.ShieldDuringChargeEffect;
 import org.doothy.untitled.items.ManaPotionItem;
 import org.doothy.untitled.items.ModItems;
+import org.doothy.untitled.mana.network.ManaNetworkTicker;
 import org.doothy.untitled.network.NetworkInit;
 import org.doothy.untitled.network.payload.ManaPayload;
 import org.doothy.untitled.network.ManaSyncHandler;
@@ -88,6 +89,7 @@ public class Untitled implements ModInitializer {
         ModBlockEntities.initialize();
         ModScreenHandlers.initialize();
         NetworkInit.init();
+        ManaNetworkTicker.register();
         // Delay mana sync by one server task to ensure attachments exist
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             server.execute(() -> {
@@ -130,6 +132,5 @@ public class Untitled implements ModInitializer {
                 }
             }
         });
-
     }
 }

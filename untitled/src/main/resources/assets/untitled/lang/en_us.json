@@ -2,5 +2,6 @@
   "item.untitled.suspicious_substance": "Suspicious Substance",
   "item.untitled.lightning_stick": "Lightning Stick",
   "block.untitled.mana_furnace": "Mana Furnace",
-  "item.untitled.mana_furnace": "Mana Furnace"
+  "item.untitled.mana_furnace": "Mana Furnace",
+  "message.untitled.mana_battery": "Mana: %s / %s"
 }

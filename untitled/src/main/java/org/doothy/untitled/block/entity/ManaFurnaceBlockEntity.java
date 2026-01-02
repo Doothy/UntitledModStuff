@@ -224,9 +224,12 @@ public class ManaFurnaceBlockEntity extends BlockEntity
 
     /* ───────────────────────── Container / GUI ───────────────────────── */
 
+    private boolean registered;
     @Override
-    public void onLoad() {
-        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
+    public void setLevel(Level level) {
+        super.setLevel(level);
+
+        if (!registered && level instanceof ServerLevel serverLevel) {
             ManaConsumerRegistry.register(
                     serverLevel,
                     this,
@@ -234,6 +237,7 @@ public class ManaFurnaceBlockEntity extends BlockEntity
                     worldPosition.getY(),
                     worldPosition.getZ()
             );
+            registered = true;
         }
     }
 
@@ -242,7 +246,6 @@ public class ManaFurnaceBlockEntity extends BlockEntity
         super.setRemoved();
         ManaConsumerRegistry.unregister(this);
     }
-    public ContainerData getContainerData() { return data; }
     @Override public int getContainerSize() { return inventory.size(); }
     @Override public boolean isEmpty() {
         return inventory.stream().allMatch(ItemStack::isEmpty);

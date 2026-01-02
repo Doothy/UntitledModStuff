@@ -2,10 +2,7 @@ package org.doothy.untitled.mana.network;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.chunk.LevelChunk;
 import org.doothy.untitled.api.mana.ManaConsumer;
 import org.doothy.untitled.api.mana.ManaProducer;
 import org.doothy.untitled.api.mana.ManaStorage;
@@ -52,10 +49,15 @@ public final class ManaNetworkTicker {
 
         if (batch.requests().isEmpty()) return;
 
-        List<ManaProducer> producers =
-                resolveProducers(level, new ArrayList<>(consumers), context);
+        Collection<ManaProducerNode> producerNodes =
+                ManaProducerRegistry.getProducers(level);
 
-        if (producers.isEmpty()) return;
+        if (producerNodes.isEmpty()) return;
+
+        List<ManaProducer> producers = new ArrayList<>();
+        for (ManaProducerNode node : producerNodes) {
+            producers.add(node.producer());
+        }
 
         int available = simulateAvailable(
                 producers,
@@ -70,6 +72,7 @@ public final class ManaNetworkTicker {
         int remaining = available;
         for (ManaProducer producer : producers) {
             if (remaining <= 0) break;
+
             int extracted = producer.extract(
                     Math.min(remaining, context.maxTransferPerTick)
             );
@@ -99,26 +102,6 @@ public final class ManaNetworkTicker {
         if (space <= 0) return 0;
 
         return (int) Math.min(space, perTick);
-    }
-
-    private static List<ManaProducer> resolveProducers(
-            ServerLevel level,
-            List<ManaConsumerNode> consumers,
-            ManaNetworkContext context
-    ) {
-        Set<ManaProducer> producers = new HashSet<>();
-
-        for (ManaConsumerNode node : consumers) {
-            producers.addAll(
-                    ManaNetworkResolver.resolveProducers(
-                            level,
-                            node.pos(),
-                            context.maxDistance
-                    )
-            );
-        }
-
-        return List.copyOf(producers);
     }
 
     private static int simulateAvailable(
