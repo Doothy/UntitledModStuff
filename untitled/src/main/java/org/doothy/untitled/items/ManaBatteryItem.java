@@ -25,6 +25,13 @@ public class ManaBatteryItem extends Item {
     private final int maxCapacity;
     private final int transferRate; // Mana per tick
 
+    /**
+     * Creates a single-stack mana battery item.
+     *
+     * @param properties    base item properties
+     * @param maxCapacity   maximum stored mana in this battery
+     * @param transferRate  maximum mana transferred per tick while charging
+     */
     public ManaBatteryItem(Properties properties, int maxCapacity, int transferRate) {
         super(properties.stacksTo(1));
         this.maxCapacity = maxCapacity;
@@ -50,6 +57,7 @@ public class ManaBatteryItem extends Item {
 
     @Override
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
+        // Server-only: drives the charge loop, pulling from the player's mana attachment
         if (level.isClientSide() || !(entity instanceof ServerPlayer player)) return;
 
         int stored = stack.getOrDefault(Untitled.STORED_MANA, 0);
@@ -75,7 +83,7 @@ public class ManaBatteryItem extends Item {
         int spaceInBattery = maxCapacity - stored;
         int maxTransfer = Math.min(transferRate, spaceInBattery);
 
-        // Simulate extraction first
+        // Simulate extraction first to avoid overdrawing when battery is almost full
         long available = mana.extractMana(maxTransfer, ManaTransaction.SIMULATE);
         if (available <= 0) {
             player.stopUsingItem();
@@ -132,6 +140,9 @@ public class ManaBatteryItem extends Item {
         return 0x00FFFF;
     }
 
+    /**
+     * @return the maximum mana this battery can store
+     */
     public int getMaxCapacity() {
         return maxCapacity;
     }

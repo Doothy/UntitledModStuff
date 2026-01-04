@@ -7,6 +7,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Utility for spawning a high-arched lightning link between two points using a quadratic Bezier curve.
+ * Adds subtle jitter and alternating after-image particles to create a lively arc.
  */
 public final class LightningArc {
 
@@ -15,12 +16,15 @@ public final class LightningArc {
     /**
      * Spawns a jittered Bezier arc between start and end.
      *
+     * The control point is elevated above the midpoint to form a tall arc.
+     * Jitter is only applied to interior points to keep endpoints precise.
+     *
      * @param level             client level to spawn particles in
      * @param start             starting point of the arc (e.g., target position)
      * @param end               ending point of the arc (e.g., source/sky point)
      * @param chaos             max random offset per axis applied to interior points (e.g., 0.15)
-     * @param densityPerBlock  particles per block of distance (e.g., 10.0)
-     * @param maxPoints        safety upper bound on total points (e.g., 250)
+     * @param densityPerBlock   particles per block of distance (e.g., 10.0)
+     * @param maxPoints         safety upper bound on total points (e.g., 250)
      */
     public static void spawnBezierArc(
             ClientLevel level,
@@ -39,12 +43,12 @@ public final class LightningArc {
             return;
         }
 
-        // Control point: midpoint raised upward
+        // Control point: midpoint raised upward to create a distinct arch
         Vec3 midPoint = start.add(end).scale(0.5);
         double arcHeight = Math.min(distance * 0.6, 8.0);
         Vec3 controlPoint = midPoint.add(0, arcHeight, 0);
 
-        // Particle density
+        // Particle density proportional to distance, clamped to avoid overload
         int particleCount = (int) Math.ceil(distance * densityPerBlock);
         particleCount = Math.max(2, Math.min(maxPoints, particleCount));
 
@@ -70,9 +74,9 @@ public final class LightningArc {
                 x += jX; y += jY; z += jZ;
             }
 
-            // Fizzle core
+            // Core spark
             level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, 0, 0, 0);
-            // After-image every 2nd step
+            // After-image every 2nd step for persistence
             if ((i & 1) == 0) {
                 level.addParticle(ParticleTypes.END_ROD, x, y, z, 0, 0, 0);
             }

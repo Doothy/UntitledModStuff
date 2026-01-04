@@ -20,6 +20,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.doothy.untitled.block.entity.ManaBatteryBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A simple block that hosts a {@link org.doothy.untitled.block.entity.ManaBatteryBlockEntity}
+ * used to store and expose mana. Provides facing, standard model rendering, and an
+ * interaction to display current mana to the player when sneaking.
+ */
 public class ManaBatteryBlock extends BaseEntityBlock {
 
     public static final MapCodec<ManaBatteryBlock> CODEC =
@@ -28,6 +33,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
     public static final EnumProperty<Direction> FACING =
             BlockStateProperties.HORIZONTAL_FACING;
 
+    /**
+     * Creates a new Mana Battery block with default NORTH facing.
+     */
     public ManaBatteryBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(
@@ -38,6 +46,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
 
     /* ───────────────────────── Codec ───────────────────────── */
 
+    /**
+     * Codec used by the game to (de)serialize block state and creation.
+     */
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
@@ -45,6 +56,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
 
     /* ───────────────────────── BlockState ───────────────────────── */
 
+    /**
+     * Adds the {@link #FACING} property to this block's state definition.
+     */
     @Override
     protected void createBlockStateDefinition(
             StateDefinition.Builder<Block, BlockState> builder
@@ -52,6 +66,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
         builder.add(FACING);
     }
 
+    /**
+     * Orients the block to face the player upon placement.
+     */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState()
@@ -63,6 +80,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
 
     /* ───────────────────────── Rendering ───────────────────────── */
 
+    /**
+     * Renders as a normal block model.
+     */
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
@@ -70,6 +90,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
 
     /* ───────────────────────── Block Entity ───────────────────────── */
 
+    /**
+     * Creates the associated {@link ManaBatteryBlockEntity} instance.
+     */
     @Override
     public @Nullable BlockEntity newBlockEntity(
             BlockPos pos,
@@ -80,6 +103,9 @@ public class ManaBatteryBlock extends BaseEntityBlock {
 
     /* ───────────────────────── Interaction ───────────────────────── */
 
+    /**
+     * Handles sneak-right-click to show current mana/capacity to the player on the server.
+     */
     @Override
     public InteractionResult useWithoutItem(
             BlockState state,
